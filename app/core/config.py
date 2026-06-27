@@ -1,0 +1,90 @@
+"""Application configuration.
+
+Pydantic-settings v2 reads configuration from (in priority order):
+    1. Arguments passed to ``Settings(...)``
+    2. **Process environment variables** (e.g. ``DATABASE_URL`` set in the shell)
+    3. The ``.env`` file at the project root
+    4. Field defaults
+
+That precedence is the source of a very common footgun: if ``DATABASE_URL`` is
+exported in the user's shell or set as a Windows system environment variable,
+it silently overrides whatever is in ``.env``. Editing ``.env`` then appears to
+"have no effect", which is the exact symptom of the alembic ``InvalidPasswordError``
+we debugged here.
+
+To make the active source explicit, :func:`get_settings` records whether the
+``DATABASE_URL`` came from the process environment or from ``.env`` and exposes
+it via :attr:`Settings.database_url_source`. The alembic ``env.py`` prints this
+on startup so you always know what is actually being used.
+"""
+
+from __future__ import annotations
+
+import os
+from functools import lru_cache
+from typing import Literal
+
+from pydantic import AnyUrl, Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Project root is two levels up from app/core/config.py
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_ENV_FILE = os.path.join(_PROJECT_ROOT, ".env")
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=_ENV_FILE,
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    app_name: str = "Multi-Cloud AI Cost Detective"
+    app_env: Literal["local", "development", "staging", "production"] = "local"
+    app_version: str = "0.1.0"
+    app_debug: bool = False
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+
+    database_url: str = Field(
+        default="postgresql+asyncpg://mcaicd:mcaicd@localhost:5432/mcaicd",
+        validation_alias="DATABASE_URL",
+    )
+    db_pool_size: int = Field(default=10, ge=1)
+    db_max_overflow: int = Field(default=20, ge=0)
+    db_pool_timeout: int = Field(default=30, ge=1)
+    db_pool_recycle: int = Field(default=1800, ge=30)
+
+    cors_origins: list[AnyUrl] = []
+
+    @computed_field
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @computed_field
+    @property
+    def database_url_source(self) -> str:
+        """Report which source actually supplied ``database_url``.
+
+        Returns one of:
+            ``"process env"`` — a ``DATABASE_URL`` env var is set in the shell
+            ``".env file"``   — value came from the project ``.env`` file
+            ``"default"``     — neither was set; the pydantic default was used
+        """
+        if "DATABASE_URL" in os.environ:
+            return "process env"
+        if os.path.isfile(_ENV_FILE):
+            with open(_ENV_FILE, encoding="utf-8") as fh:
+                for line in fh:
+                    if line.strip().startswith("DATABASE_URL"):
+                        return ".env file"
+        return "default"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

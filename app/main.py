@@ -1,0 +1,54 @@
+"""FastAPI application factory.
+
+The application is constructed via :func:`create_app` so it can be imported
+by ASGI servers (``uvicorn app.main:app``) and test clients alike. All
+wiring — logging, lifespan hooks, routers, and OpenAPI metadata — happens
+here to keep route modules focused on HTTP concerns.
+"""
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from app.api.router import api_router
+from app.api.routes.root import router as root_router
+from app.core.config import settings
+from app.core.logging import configure_logging, get_logger
+from app.core.openapi import configure_openapi
+from app.database.session import dispose_engine
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    configure_logging()
+    logger = get_logger(__name__)
+    logger.info(
+        "application_starting",
+        extra={
+            "app_name": settings.app_name,
+            "app_env": settings.app_env,
+            "app_version": settings.app_version,
+        },
+    )
+    try:
+        yield
+    finally:
+        await dispose_engine()
+        logger.info("application_stopped")
+
+
+def create_app() -> FastAPI:
+    application = FastAPI(
+        title=settings.app_name,
+        version=settings.app_version,
+        debug=settings.app_debug,
+        lifespan=lifespan,
+    )
+    application.include_router(root_router)
+    application.include_router(api_router)
+    configure_openapi(application)
+    return application
+
+
+app = create_app()

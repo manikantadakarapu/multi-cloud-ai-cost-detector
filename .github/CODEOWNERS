@@ -1,0 +1,7 @@
+# These owners will be automatically requested for review when their code
+# is changed. Add more owners only after explicit maintainer approval.
+#
+# Format:  <path>  <owners>
+# Default owner for everything in the repository:
+
+* @manikantadakarapu

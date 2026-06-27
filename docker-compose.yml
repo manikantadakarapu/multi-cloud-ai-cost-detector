@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres-mcaicd
+    # IMPORTANT: POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB are only
+    # honored the FIRST TIME the data volume is initialized. Changing them
+    # later in compose/.env will NOT update the running PostgreSQL user.
+    # To change credentials after the volume is initialized, you must
+    # either (a) drop the volume and recreate the container, or
+    # (b) run `ALTER USER ... WITH PASSWORD '...'` inside psql.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-testuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-testuser123}
+      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-mcaicd-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-testuser} -d ${POSTGRES_DB:-testdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-mcaicd-data:
+    name: postgres-mcaicd-data
