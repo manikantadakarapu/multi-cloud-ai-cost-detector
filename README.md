@@ -14,8 +14,9 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Phase 1 — backend foundation complete. Cloud provider integrations
-> and the AI recommendation engine are planned for later phases.
+> **Status:** Sprint 0.2 — Engineering documentation & architecture complete. Backend
+> foundation (Sprint 0.1) done. Authentication (Sprint 0.3) and cloud integrations
+> (Sprint 0.4) planned.
 
 ## Table of Contents
 
@@ -98,18 +99,18 @@ MCAICD/
 
 ## Roadmap
 
-| Phase | Focus                                    | Status      |
-| ----- | ---------------------------------------- | ----------- |
-| 1     | Backend foundation                       | ✅ Complete  |
-| 2     | Authentication & authorisation           | ⏳ Planned   |
-| 3     | Azure cost ingestion & analysis         | ⏳ Planned   |
-| 4     | AWS cost ingestion & analysis            | ⏳ Planned   |
-| 5     | GCP cost ingestion & analysis            | ⏳ Planned   |
-| 6     | AI recommendation engine                 | ⏳ Planned   |
-| 7     | Dashboard & reporting API                | ⏳ Planned   |
-| 8     | Docker containerisation of the app      | ⏳ Planned   |
-| 9     | Kubernetes deployment                    | ⏳ Planned   |
-| 10    | Production AWS deployment               | ⏳ Planned   |
+| Sprint | Status | Description |
+| ------ | ------ | ----------- |
+| 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
+| 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
+| 0.3 | ⏳ Planned | Authentication — JWT bearer auth, Azure AD (OIDC), Google Login (OAuth 2.0), role-based access control. |
+| 0.4 | ⏳ Planned | Cloud integrations — Azure Cost Management, AWS Cost Explorer, GCP Billing export, unified normalised schema. |
+| 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
+| 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
+| 0.7 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
+| 0.8 | ⏳ Planned | Real-time monitoring — WebSocket anomaly push, alerting rules, notification channels. |
+| 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
+| 1.0 | 🔭 Future | Production release — hardening, load testing, security audit, GA.
 
 ---
 
@@ -281,12 +282,31 @@ This project is intended to be released under the **MIT License**. A formal
 
 ---
 
+## Project Documentation
+
+This repository maintains production-quality engineering documentation under
+`docs/`. The documentation is structured for a professional software
+engineering organisation and reflects the current Sprint 0.2 progress.
+
+| Document | Description |
+| -------- | ----------- |
+| [`docs/project-roadmap.md`](docs/project-roadmap.md) | Product and engineering roadmap with sprint plan, milestones, and long-term vision. |
+| [`docs/architecture.md`](docs/architecture.md) | System architecture with Mermaid diagrams, component breakdown, and deployment view. |
+| [`docs/development-workflow.md`](docs/development-workflow.md) | Engineering workflow: branching, commits, PR process, testing, linting, Docker, migrations, releases, and CI/CD philosophy. |
+| [`docs/adr/ADR-0001-fastapi.md`](docs/adr/ADR-0001-fastapi.md) | Why FastAPI over Flask, Django, Express.js. |
+| [`docs/adr/ADR-0002-postgresql.md`](docs/adr/ADR-0002-postgresql.md) | Why PostgreSQL over MongoDB, MySQL, SQLite. |
+| [`docs/adr/ADR-0003-clean-architecture.md`](docs/adr/ADR-0003-clean-architecture.md) | Why clean architecture layering and the dependency rules that govern the codebase. |
+| [`docs/adr/ADR-0004-docker-development.md`](docs/adr/ADR-0004-docker-development.md) | Why Docker-first development and the dev/prod container strategy. |
+| [`docs/adr/ADR-0005-ai-provider-abstraction.md`](docs/adr/ADR-0005-ai-provider-abstraction.md) | Why an AI provider abstraction protocol to avoid vendor lock-in. |
+
+---
+
 ## Future Improvements
 
 - GitHub Actions CI pipeline with automated testing and linting
-- Dockerfile for the application itself (Phase 8)
-- Kubernetes manifests and Helm chart (Phase 9)
-- Terraform infrastructure-as-code for AWS deployment (Phase 10)
+- Dockerfile for the application itself (Sprint 0.9)
+- Kubernetes manifests and Helm chart (Sprint 0.9)
+- Terraform infrastructure-as-code for AWS deployment (Sprint 0.9)
 - Redis-backed caching layer for provider API responses
-- Rate limiting and API key authentication (Phase 2)
-- Cost anomaly detection models and the AI recommendation engine (Phase 6)
+- Rate limiting and API key authentication (Sprint 0.3)
+- Cost anomaly detection models and the AI recommendation engine (Sprint 0.5)
