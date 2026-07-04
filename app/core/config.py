@@ -89,6 +89,28 @@ class Settings(BaseSettings):
         validation_alias="AUTH_MAX_LOGIN_ATTEMPTS",
     )
 
+    # --- AWS Cost Explorer ---
+    aws_default_region: str = Field(
+        default="us-east-1",
+        validation_alias="AWS_DEFAULT_REGION",
+    )
+    aws_profile: str | None = Field(
+        default=None,
+        validation_alias="AWS_PROFILE",
+    )
+    aws_access_key_id: str | None = Field(
+        default=None,
+        validation_alias="AWS_ACCESS_KEY_ID",
+    )
+    aws_secret_access_key: str | None = Field(
+        default=None,
+        validation_alias="AWS_SECRET_ACCESS_KEY",
+    )
+    aws_cost_explorer_enabled: bool = Field(
+        default=True,
+        validation_alias="AWS_COST_EXPLORER_ENABLED",
+    )
+
     @computed_field
     @property
     def is_production(self) -> bool:
