@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_No changes yet._
+
+---
+
+## [0.3.0] - 2026-07-04
+
 ### Added
 
 - `users` table with UUID primary key, unique `email`, `full_name`,
@@ -144,5 +150,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   diagnostic script so contributors do not paste credentials into source
   control during debugging.
 
-[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.3.0
 [0.1.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.1.0
