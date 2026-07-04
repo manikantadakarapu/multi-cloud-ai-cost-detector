@@ -5,10 +5,11 @@ import sys
 from logging.config import fileConfig
 from urllib.parse import urlparse
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
+
+from alembic import context
 
 # Ensure the project root is on sys.path so `app.*` imports resolve when
 # alembic is invoked from any working directory.
@@ -16,8 +17,22 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+# Import all models so Alembic autogenerate discovers them.
+# The auth package ``__init__`` currently imports service/dependency modules
+# that reference removed model members, so we load ``app.auth.models``
+# directly to avoid executing the package ``__init__`` during migrations.
+import importlib.util  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
+
 from app.core.config import settings  # noqa: E402
 from app.database.base import Base  # noqa: E402
+
+_auth_models_path = Path(__file__).resolve().parent.parent / "app" / "auth" / "models.py"
+_spec = importlib.util.spec_from_file_location("app.auth.models", _auth_models_path)
+_auth_models = importlib.util.module_from_spec(_spec)
+sys.modules["app.auth.models"] = _auth_models
+_spec.loader.exec_module(_auth_models)  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

@@ -57,6 +57,38 @@ class Settings(BaseSettings):
 
     cors_origins: list[AnyUrl] = []
 
+    # --- Authentication / JWT ---
+    jwt_secret_key: str = Field(
+        default="change-me-in-production",
+        validation_alias="JWT_SECRET_KEY",
+    )
+    jwt_algorithm: str = Field(
+        default="HS256",
+        validation_alias="JWT_ALGORITHM",
+    )
+    access_token_expire_minutes: int = Field(
+        default=30,
+        ge=1,
+        validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES",
+    )
+    refresh_token_expire_days: int = Field(
+        default=7,
+        ge=1,
+        validation_alias="REFRESH_TOKEN_EXPIRE_DAYS",
+    )
+    # Placeholder: rate limiting will be enforced in Sprint 0.3+ / middleware layer.
+    auth_rate_limit_per_minute: int = Field(
+        default=60,
+        ge=1,
+        validation_alias="AUTH_RATE_LIMIT_PER_MINUTE",
+    )
+    # Placeholder: account lockout after N failed attempts.
+    auth_max_login_attempts: int = Field(
+        default=5,
+        ge=1,
+        validation_alias="AUTH_MAX_LOGIN_ATTEMPTS",
+    )
+
     @computed_field
     @property
     def is_production(self) -> bool:

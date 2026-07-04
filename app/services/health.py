@@ -19,14 +19,14 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.config import settings
+from app.core.logging import get_logger
+
 # asyncpg raises ConnectionRefusedError / OSError-level errors when the
 # database is unreachable. SQLAlchemy does not always wrap these in
 # SQLAlchemyError, so we catch OSError explicitly to degrade to 503
 # instead of an unhandled 500.
 _DB_ERROR_TYPES: tuple[type[BaseException], ...] = (SQLAlchemyError, OSError)
-
-from app.core.config import settings
-from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.api.routes.root import router as root_router
@@ -45,6 +46,17 @@ def create_app() -> FastAPI:
         debug=settings.app_debug,
         lifespan=lifespan,
     )
+
+    # CORS — allow the configured origins. In production this is an explicit
+    # allow-list; in local/dev it typically includes localhost front-ends.
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.cors_origins],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     application.include_router(root_router)
     application.include_router(api_router)
     configure_openapi(application)

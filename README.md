@@ -14,9 +14,10 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 0.2 — Engineering documentation & architecture complete. Backend
-> foundation (Sprint 0.1) done. Authentication (Sprint 0.3) and cloud integrations
-> (Sprint 0.4) planned.
+> **Status:** Sprint 0.3 — Local JWT authentication foundation complete.
+> Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
+> and JWT auth (Sprint 0.3) are done. Cloud integrations (Sprint 0.4)
+> and SSO providers (Azure AD, Google) are planned.
 
 ## Table of Contents
 
@@ -94,6 +95,7 @@ MCAICD/
 - ✅ Service root endpoint for discovery
 - ✅ Rich OpenAPI / Swagger documentation
 - ✅ Docker Compose for local PostgreSQL
+- ✅ Local JWT authentication (register, login, refresh, logout, `/me`)
 
 ---
 
@@ -103,7 +105,7 @@ MCAICD/
 | ------ | ------ | ----------- |
 | 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
 | 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
-| 0.3 | ⏳ Planned | Authentication — JWT bearer auth, Azure AD (OIDC), Google Login (OAuth 2.0), role-based access control. |
+| 0.3 | 🟡 In progress | Authentication — local JWT foundation (register, login, refresh, logout, `/me`) complete. Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control planned. |
 | 0.4 | ⏳ Planned | Cloud integrations — Azure Cost Management, AWS Cost Explorer, GCP Billing export, unified normalised schema. |
 | 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
 | 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
@@ -171,11 +173,16 @@ uvicorn app.main:app --reload
 
 ### Access the API
 
-| URL                     | Purpose                         |
-| ----------------------- | ------------------------------- |
-| http://localhost:8000/  | Service root (discovery)        |
-| http://localhost:8000/docs | Swagger UI (interactive docs) |
-| http://localhost:8000/api/v1/health | Health check endpoint |
+| URL                                | Purpose                                       |
+| ---------------------------------- | --------------------------------------------- |
+| http://localhost:8000/             | Service root (discovery)                      |
+| http://localhost:8000/docs         | Swagger UI (interactive docs)                 |
+| http://localhost:8000/api/v1/health         | Health check endpoint                |
+| http://localhost:8000/api/v1/auth/register  | Register a new user (returns tokens)  |
+| http://localhost:8000/api/v1/auth/login     | Authenticate and obtain access/refresh tokens |
+| http://localhost:8000/api/v1/auth/refresh   | Exchange a refresh token for a new access token |
+| http://localhost:8000/api/v1/auth/logout    | Stateless logout                            |
+| http://localhost:8000/api/v1/auth/me        | Current authenticated user profile          |
 
 ---
 
@@ -194,6 +201,12 @@ uvicorn app.main:app --reload
 | `DB_POOL_TIMEOUT`| Connection checkout timeout (seconds)                | `30` |
 | `DB_POOL_RECYCLE`| Connection recycle interval (seconds)               | `1800` |
 | `CORS_ORIGINS`   | Allowed CORS origins (JSON list)                     | `[]` |
+| `JWT_SECRET_KEY` | Secret used to sign and verify JWTs (HS256). Generate with `python -c "import secrets; print(secrets.token_urlsafe(48))"`. **Required in production.** | `dev-change-me-...` (dev only) |
+| `JWT_ALGORITHM`  | JWT signing algorithm                       | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime (minutes)  | `30` |
+| `REFRESH_TOKEN_EXPIRE_DAYS`   | Refresh token lifetime (days)     | `7` |
+| `AUTH_RATE_LIMIT_PER_MINUTE`  | Per-IP rate limit on auth endpoints (requests/min) | `60` |
+| `AUTH_MAX_LOGIN_ATTEMPTS`     | Max failed login attempts before lockout  | `5` |
 
 > **Note:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are used by
 > `docker-compose.yml` to initialise the PostgreSQL container. They are only
