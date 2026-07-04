@@ -1,4 +1,4 @@
-# Multi-Cloud AI Cost Detective
+# Multi-Cloud AI Cost Detector
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
