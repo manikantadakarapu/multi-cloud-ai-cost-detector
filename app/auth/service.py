@@ -11,6 +11,7 @@ from __future__ import annotations
 import uuid
 
 import jwt
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt import create_access_token, create_refresh_token, decode_token
@@ -89,7 +90,10 @@ class AuthService:
             password_hash=hash_password(password),
             is_active=True,
         )
-        await self._repo.create_user(user)
+        try:
+            await self._repo.create_user(user)
+        except IntegrityError:
+            raise EmailAlreadyRegisteredError() from None
 
         logger.info(
             "user_registered",

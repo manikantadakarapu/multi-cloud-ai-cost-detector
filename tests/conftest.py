@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -20,7 +19,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.api.deps import get_db_session
 from app.database.base import Base
 from app.main import app
-
 
 # ---------------------------------------------------------------------------
 # Database fixtures

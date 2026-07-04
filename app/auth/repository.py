@@ -31,16 +31,12 @@ class AuthRepository:
 
     async def get_user_by_email(self, email: str) -> User | None:
         """Fetch a user by email address."""
-        result = await self._session.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self._session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
         """Fetch a user by primary key."""
-        result = await self._session.execute(
-            select(User).where(User.id == user_id)
-        )
+        result = await self._session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def create_user(self, user: User) -> User:
@@ -56,4 +52,3 @@ class AuthRepository:
         if user is not None:
             user.last_login_at = datetime.now(UTC)
             await self._session.commit()
-

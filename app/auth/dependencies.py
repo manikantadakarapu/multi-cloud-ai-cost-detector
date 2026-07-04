@@ -12,7 +12,7 @@ import uuid
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,16 +30,15 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    request: Request,
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> User:
     """Decode the access token and return the authenticated :class:`User`.
 
     This is the foundational auth dependency. All other auth dependencies
-    build on top of it.
+    build on top of it. The decoded user is returned directly; handlers
+    that need it should depend on this function rather than reading from
+    ``request.state``.
 
     Raises
     ------
@@ -97,10 +96,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Store on request state so downstream handlers (e.g. /auth/me) can
-    # access the user without re-decoding.
-    request.state.current_user = user
-
     logger.info(
         "user_authenticated",
         extra={"user_id": str(user.id), "email": user.email},
@@ -123,6 +118,3 @@ async def get_current_active_user(
             detail="This account has been deactivated",
         )
     return current_user
-
-
-

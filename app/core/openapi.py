@@ -30,7 +30,10 @@ OPENAPI_TAGS: list[dict[str, str]] = [
     },
     {
         "name": "auth",
-        "description": "Authentication and authorization — registration, login, token refresh, logout, and user profile.",
+        "description": (
+            "Authentication and authorization — registration, login, "
+            "token refresh, logout, and user profile."
+        ),
     },
 ]
 

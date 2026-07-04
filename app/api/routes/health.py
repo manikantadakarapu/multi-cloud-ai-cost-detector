@@ -6,11 +6,11 @@ and orchestrators can pull the instance out of rotation.
 """
 
 from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.deps import get_session_factory
 from app.schemas.health import HealthCheckResponse
 from app.services.health import HealthService
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 router = APIRouter()
 
@@ -27,7 +27,9 @@ router = APIRouter()
 )
 async def health_check(
     response: Response,
-    session_factory: async_sessionmaker[AsyncSession] = Depends(get_session_factory),
+    session_factory: async_sessionmaker[AsyncSession] = Depends(  # noqa: B008
+        get_session_factory,
+    ),
 ) -> HealthCheckResponse:
     """Probe database connectivity and report aggregate service health."""
     health = HealthService(session_factory)

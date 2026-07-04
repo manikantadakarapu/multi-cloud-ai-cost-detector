@@ -10,7 +10,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No changes yet._
+### Added
+
+- `users` table with UUID primary key, unique `email`, `full_name`,
+  `password_hash`, `is_active`, and timestamp columns (`app/auth/models.py`).
+- Alembic migration `20260629_0000_create_users_and_revoked_tokens` adding
+  the `users` table (with the unique index on `email`) and the
+  `revoked_tokens` table for future refresh-token invalidation.
+- Authentication router mounted under `/api/v1/auth` (`app/auth/router.py`)
+  exposing:
+  - `POST /api/v1/auth/register` — create a new user, returns the user
+    profile and an initial access + refresh token pair.
+  - `POST /api/v1/auth/login` — exchange email + password for tokens.
+  - `POST /api/v1/auth/refresh` — exchange a refresh token for a new
+    access token.
+  - `POST /api/v1/auth/logout` — stateless logout.
+  - `GET  /api/v1/auth/me` — return the authenticated user's profile.
+- `AuthService` (`app/auth/service.py`) and `AuthRepository`
+  (`app/auth/repository.py`) implementing registration, password
+  verification, JWT issuance, and refresh-token decoding. Registration
+  catches unique-constraint violations and converts them into
+  `EMAIL_ALREADY_REGISTERED` to prevent HTTP 500s under concurrent
+  registrations.
+- JWT helpers (`app/auth/jwt.py`) for creating and decoding HS256 access
+  and refresh tokens, including `jti` claims for future revocation
+  tracking.
+- Password hashing using `passlib[bcrypt]` (`app/auth/security.py`) with
+  the bcrypt 72-byte input limit handled by pre-truncation.
+- Pydantic request/response schemas for auth (`app/auth/schemas.py`):
+  `UserRegisterRequest`, `UserLoginRequest`, `TokenRefreshRequest`,
+  `LogoutRequest`, `UserResponse`, `UserRegisterResponse`,
+  `TokenResponse`, `MessageResponse`, and `ErrorResponse`.
+- FastAPI dependencies (`app/auth/dependencies.py`) implementing
+  `get_current_user` and `get_current_active_user` based on
+  `HTTPBearer`. The authenticated user is returned directly; handlers
+  depend on this function rather than reading from `request.state`.
+- JWT-related settings in `app/core/config.py`: `JWT_SECRET_KEY`,
+  `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`,
+  `REFRESH_TOKEN_EXPIRE_DAYS`, `AUTH_RATE_LIMIT_PER_MINUTE`, and
+  `AUTH_MAX_LOGIN_ATTEMPTS`. Documented in `.env.example`.
+- Auth test coverage (`tests/test_auth.py`) covering registration
+  success and validation, duplicate-email handling, login success and
+  invalid credentials, inactive account rejection, refresh and logout
+  flows, `/auth/me` with and without a token, and JWT decoding
+  edge cases.
+- Status line in `README.md` updated to reflect Sprint 0.3 local JWT
+  auth completion, with the new auth endpoints added to the API table
+  and the new environment variables documented.
+
+### Changed
+
+- _Nothing._
+
+### Deprecated
+
+- _Nothing._
+
+### Removed
+
+- _Nothing._
+
+### Fixed
+
+- _Nothing._
+
+### Security
+
+- Passwords are stored only as bcrypt hashes (no plaintext or reversible
+  encoding). The `users.password_hash` column is sized to accommodate the
+  full bcrypt output.
+- All auth handlers return generic 401 messages for invalid credentials
+  to prevent email enumeration.
+- `.env.example` ships a placeholder `JWT_SECRET_KEY`; production
+  deployments must override it via the environment with a long random
+  value (`python -c "import secrets; print(secrets.token_urlsafe(48))"`).
 
 ---
 

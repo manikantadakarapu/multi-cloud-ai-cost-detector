@@ -21,9 +21,6 @@ from typing import Any, Literal, TypedDict
 import jwt
 
 from app.core.config import settings
-from app.core.logging import get_logger
-
-logger = get_logger(__name__)
 
 TokenType = Literal["access", "refresh"]
 
@@ -80,9 +77,7 @@ def create_access_token(*, user_id: str, email: str) -> str:
     return token
 
 
-def create_refresh_token(
-    *, user_id: str, email: str
-) -> tuple[str, str, datetime]:
+def create_refresh_token(*, user_id: str, email: str) -> tuple[str, str, datetime]:
     """Create a long-lived refresh token.
 
     Returns
