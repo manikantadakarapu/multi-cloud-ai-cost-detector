@@ -63,7 +63,9 @@ class TestAWSEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_get_costs_invalid_granularity(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_invalid_granularity(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Invalid granularity returns 422."""
         response = await auth_client.get(
             "/api/v1/aws/costs",
@@ -88,7 +90,9 @@ class TestAWSEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_credentials_error(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_aws_credentials_error(
+        self, auth_client: AsyncClient
+    ) -> None:
         """AWS credentials error returns 500."""
         from app.services.aws.exceptions import AWSCredentialsError
 

@@ -14,6 +14,50 @@ _No changes yet._
 
 ---
 
+## [0.4.1] - 2026-07-05
+
+### Added
+
+- GitHub Actions CI/CD workflows:
+  - `.github/workflows/backend-ci.yml` — Python 3.12 setup, dependency caching,
+    `ruff check`, `black --check`, `pytest` with coverage reporting.
+  - `.github/workflows/security.yml` — `bandit` static analysis and
+    `pip-audit` vulnerability scanning on every push/PR and weekly.
+  - `.github/workflows/codeql.yml` — GitHub CodeQL analysis for Python on
+    push/PR and weekly schedule.
+  - `.github/workflows/release.yml` — automated GitHub Release creation
+    triggered by `v*.*.*` tags with auto-generated release notes.
+- `.github/dependabot.yml` — weekly Dependabot updates for `pip` and
+  `github-actions` ecosystems.
+- `.pre-commit-config.yaml` — hooks for trailing whitespace, end-of-file
+  fixer, YAML validation, `ruff` check/format, and `black`.
+- `.editorconfig` — editor defaults for Python and YAML files.
+- README badges for Backend CI, CodeQL, and coverage placeholder.
+- README "Development Workflow" section documenting tests, linting,
+  formatting, security scanning, pre-commit hooks, and the release process.
+
+### Changed
+
+- `pyproject.toml` dev dependencies expanded to include `black`, `bandit[toml]`,
+  `pip-audit`, `pre-commit`, and `pytest-cov`.
+- Bumped `black` to `>=26.3.1,<27.0.0` and `pytest` to `>=9.0.3,<10.0.0`
+  to resolve known vulnerabilities.
+- Widened `pytest-asyncio` upper bound to `<2.0.0` for `pytest` 9.x
+  compatibility.
+
+### Fixed
+
+- Applied `black` formatting across the codebase.
+- Suppressed `bandit` B106 false positives for JWT `token_type` string
+  literals (`access`, `refresh`, `bearer`) in `app/auth/jwt.py`,
+  `app/auth/router.py`, and `app/auth/service.py`.
+
+### Security
+
+- Added automated `bandit` and `pip-audit` scans in CI.
+
+---
+
 ## [0.4.0] - 2026-07-05
 
 ### Added
@@ -228,7 +272,8 @@ _No changes yet._
   diagnostic script so contributors do not paste credentials into source
   control during debugging.
 
-[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.4.1
 [0.4.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.3.0
 [0.1.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.1.0

@@ -71,7 +71,7 @@ def create_access_token(*, user_id: str, email: str) -> str:
     token, _ = _create_token(
         user_id=user_id,
         email=email,
-        token_type="access",
+        token_type="access",  # nosec: B106 — JWT token type identifier, not a password
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
     return token
@@ -91,7 +91,7 @@ def create_refresh_token(*, user_id: str, email: str) -> tuple[str, str, datetim
     token, jti = _create_token(
         user_id=user_id,
         email=email,
-        token_type="refresh",
+        token_type="refresh",  # nosec: B106 — JWT token type identifier, not a password
         expires_delta=expires_delta,
     )
     return token, jti, expires_at

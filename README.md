@@ -4,6 +4,9 @@
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://docs.astral.sh/ruff/)
+[![Backend CI](https://github.com/manikantadakarapu/multi-cloud-ai-cost-detector/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/manikantadakarapu/multi-cloud-ai-cost-detector/actions/workflows/backend-ci.yml)
+[![CodeQL](https://github.com/manikantadakarapu/multi-cloud-ai-cost-detector/actions/workflows/codeql.yml/badge.svg)](https://github.com/manikantadakarapu/multi-cloud-ai-cost-detector/actions/workflows/codeql.yml)
+[![Coverage](https://img.shields.io/badge/coverage-TBD-lightgrey.svg)](#)
 
 A FastAPI backend platform for detecting cost anomalies across AWS, Azure, and
 Google Cloud Platform, with AI-powered recommendations to reduce cloud spend.
@@ -28,6 +31,7 @@ teams can act on directly.
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Development Commands](#development-commands)
+- [Development Workflow](#development-workflow)
 - [Contributing](#contributing)
 - [License](#license)
 - [Future Improvements](#future-improvements)
@@ -354,6 +358,94 @@ ruff format .                   # Format
 # Tests
 pytest                          # Run all tests
 pytest -v                        # Verbose output
+```
+
+---
+
+## Development Workflow
+
+This section summarises the day-to-day developer tasks enforced by the
+CI/CD pipeline. The full engineering workflow — branching strategy,
+PR process, code review expectations, and release philosophy — lives in
+[`docs/development-workflow.md`](docs/development-workflow.md).
+
+### Running tests
+
+The test suite uses `pytest` with `pytest-asyncio` for async coverage.
+The Backend CI workflow runs the full suite on every push and pull
+request; run the same command locally before pushing.
+
+```bash
+pytest -q                                   # Run the full suite (quiet)
+pytest tests/api -q                        # Run a subset (e.g. API tests)
+pytest --cov=app --cov-report=term-missing  # With coverage report
+```
+
+### Linting and formatting
+
+[Ruff](https://docs.astral.sh/ruff/) handles both linting and formatting.
+The pipeline runs both in check mode (no writes); run the same commands
+locally so failures surface before CI.
+
+```bash
+ruff check .              # Lint (fails on findings)
+ruff format . --check     # Verify formatting (no file changes)
+ruff format .             # Auto-format files in place
+```
+
+### Security scanning
+
+Two security tools run in CI on every push and pull request via the
+**Security Scan** workflow:
+
+| Tool        | Scope                  | Command         |
+| ----------- | ---------------------- | --------------- |
+| `bandit`    | `app/` source tree     | `bandit -r app` |
+| `pip-audit` | Python dependencies    | `pip-audit`     |
+
+Run them locally before opening a pull request to catch issues early:
+
+```bash
+bandit -r app              # Static security analysis of app source
+pip-audit                  # Audit installed dependencies for CVEs
+```
+
+### Pre-commit hooks
+
+A curated set of hooks runs locally before each commit. Install once
+after cloning:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run the full hook suite against the repository (useful after pulling
+new changes or before pushing):
+
+```bash
+pre-commit run --all-files
+```
+
+Hooks include trailing-whitespace and EOF fixers, YAML validation, Ruff
+lint and format, and Black formatting. See
+[`.pre-commit-config.yaml`](.pre-commit-config.yaml) for the full list.
+
+### Release process
+
+Releases are fully automated via GitHub Actions. Pushing a semver tag
+of the form `v*.*.*` to `main` triggers the **Release** workflow, which:
+
+1. Builds the distribution artefacts (sdist and wheel).
+2. Publishes them to a GitHub Release with auto-generated notes.
+3. Tags the commit and notifies subscribers.
+
+To cut a release locally (after bumping the version / `CHANGELOG` on
+`main`):
+
+```bash
+git tag -a v0.4.0 -m "Release 0.4.0"
+git push origin v0.4.0
 ```
 
 ---

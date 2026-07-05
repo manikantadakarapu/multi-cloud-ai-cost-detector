@@ -171,7 +171,7 @@ class AuthService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            token_type="bearer",
+            token_type="bearer",  # nosec: B106 — OAuth2 token type identifier, not a password
             expires_in=settings.access_token_expire_minutes * 60,
         )
 
@@ -220,7 +220,7 @@ def _issue_tokens(user: User) -> TokenResponse:
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer",
+        token_type="bearer",  # nosec: B106 — OAuth2 token type identifier, not a password
         expires_in=settings.access_token_expire_minutes * 60,
     )
 

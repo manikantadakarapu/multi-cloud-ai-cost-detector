@@ -1,0 +1,71 @@
+name: "Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    # Weekly run on Wednesday at 06:17 UTC (offset from CodeQL's Monday cron
+    # so the two scheduled jobs do not contend for runners).
+    - cron: '17 6 * * 3'
+
+jobs:
+  bandit:
+    name: Bandit (Python security linter)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install bandit
+      run: python -m pip install --upgrade pip "bandit[toml]"
+      shell: bash
+
+    - name: Run bandit
+      # `bandit` exits non-zero when it finds issues, so a finding will fail
+      # the job. The JSON report is also written for the upload step below.
+      run: bandit -r app -f json -o bandit-report.json
+      shell: bash
+      continue-on-error: false
+
+    - name: Upload bandit report
+      uses: actions/upload-artifact@v4
+      with:
+        name: bandit-report
+        path: bandit-report.json
+        if-no-files-found: warn
+        retention-days: 30
+
+  pip-audit:
+    name: pip-audit (dependency vulnerabilities)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install pip-audit
+      run: python -m pip install --upgrade pip pip-audit
+      shell: bash
+
+    - name: Run pip-audit
+      # `pip-audit` exits non-zero when vulnerable dependencies are found,
+      # so vulnerabilities fail the job automatically.
+      run: pip-audit
+      shell: bash

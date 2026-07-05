@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    # `contents: write` is required to create a GitHub Release via the
+    # REST API (which `gh release create` wraps). Default GITHUB_TOKEN
+    # is read-only for repository contents, so we must explicitly widen
+    # the permission scope for this single job.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        # `gh release create` wraps the GitHub REST API. `--generate-notes`
+        # asks the API to compose release notes from merged pull requests
+        # and commits between this tag and the previous release tag, so we
+        # do not need to maintain a changelog by hand.
+        # `github.ref_name` resolves to the pushed tag (e.g. `v1.2.3`).
+        run: gh release create "${{ github.ref_name }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

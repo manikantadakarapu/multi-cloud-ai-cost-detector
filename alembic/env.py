@@ -28,7 +28,9 @@ from pathlib import Path  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.database.base import Base  # noqa: E402
 
-_auth_models_path = Path(__file__).resolve().parent.parent / "app" / "auth" / "models.py"
+_auth_models_path = (
+    Path(__file__).resolve().parent.parent / "app" / "auth" / "models.py"
+)
 _spec = importlib.util.spec_from_file_location("app.auth.models", _auth_models_path)
 _auth_models = importlib.util.module_from_spec(_spec)
 sys.modules["app.auth.models"] = _auth_models
@@ -61,8 +63,14 @@ def _mask_url(url: str) -> str:
 # piece of evidence when auth fails: it tells you whether .env, the
 # process environment, or a default value is the active source.
 print(f"[alembic] DATABASE_URL = {_mask_url(settings.database_url)}", file=sys.stderr)
-print(f"[alembic] driver        = {settings.database_url.split('://', 1)[0]}", file=sys.stderr)
-print(f"[alembic] .env loaded?  = {settings.model_config.get('env_file')!r}", file=sys.stderr)
+print(
+    f"[alembic] driver        = {settings.database_url.split('://', 1)[0]}",
+    file=sys.stderr,
+)
+print(
+    f"[alembic] .env loaded?  = {settings.model_config.get('env_file')!r}",
+    file=sys.stderr,
+)
 
 
 def run_migrations_offline() -> None:

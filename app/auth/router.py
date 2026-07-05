@@ -119,11 +119,13 @@ async def register(
         return JSONResponse(status_code=code, content=body.model_dump())
     user_id_str = str(user.id)
     access_token = create_access_token(user_id=user_id_str, email=user.email)
-    refresh_token, _jti, _expires_at = create_refresh_token(user_id=user_id_str, email=user.email)
+    refresh_token, _jti, _expires_at = create_refresh_token(
+        user_id=user_id_str, email=user.email
+    )
     tokens = TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        token_type="bearer",
+        token_type="bearer",  # nosec: B106 — OAuth2 token type identifier, not a password
         expires_in=settings.access_token_expire_minutes * 60,
     )
     return UserRegisterResponse(user=user, tokens=tokens)
@@ -177,7 +179,9 @@ async def login(
     """Login with email + password."""
     service = AuthService(session)
     try:
-        tokens = await service.authenticate(email=payload.email, password=payload.password)
+        tokens = await service.authenticate(
+            email=payload.email, password=payload.password
+        )
     except UserInactiveError as exc:
         body, code = _error_response(exc, status.HTTP_403_FORBIDDEN)
         return JSONResponse(status_code=code, content=body.model_dump())
@@ -240,7 +244,9 @@ async def refresh(
         200: {
             "description": "Logout successful.",
             "model": MessageResponse,
-            "content": {"application/json": {"example": {"message": "Successfully logged out."}}},
+            "content": {
+                "application/json": {"example": {"message": "Successfully logged out."}}
+            },
         },
         401: {
             "description": "Invalid refresh token.",
@@ -279,7 +285,9 @@ async def logout(
             "description": "Missing or invalid token.",
             "model": ErrorResponse,
             "content": {
-                "application/json": {"example": {"detail": "Not authenticated", "error_code": None}}
+                "application/json": {
+                    "example": {"detail": "Not authenticated", "error_code": None}
+                }
             },
         },
     },
