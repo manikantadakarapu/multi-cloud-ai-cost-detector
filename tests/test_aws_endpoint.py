@@ -63,9 +63,7 @@ class TestAWSEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_get_costs_invalid_granularity(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_invalid_granularity(self, auth_client: AsyncClient) -> None:
         """Invalid granularity returns 422."""
         response = await auth_client.get(
             "/api/v1/aws/costs",
@@ -90,9 +88,7 @@ class TestAWSEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_credentials_error(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_aws_credentials_error(self, auth_client: AsyncClient) -> None:
         """AWS credentials error returns 500."""
         from app.services.aws.exceptions import AWSCredentialsError
 
@@ -111,9 +107,7 @@ class TestAWSEndpoint:
             assert response.status_code == 500
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_throttling(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_aws_throttling(self, auth_client: AsyncClient) -> None:
         """AWS throttling returns 429."""
         from app.services.aws.exceptions import AWSThrottlingError
 
@@ -132,9 +126,7 @@ class TestAWSEndpoint:
             assert response.status_code == 429
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_permissions(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_aws_permissions(self, auth_client: AsyncClient) -> None:
         """AWS permissions error returns 403."""
         from app.services.aws.exceptions import AWSPermissionsError
 
@@ -153,9 +145,7 @@ class TestAWSEndpoint:
             assert response.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_service_error(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_aws_service_error(self, auth_client: AsyncClient) -> None:
         """AWS service error returns 502."""
         from app.services.aws.exceptions import AWSServiceError
 

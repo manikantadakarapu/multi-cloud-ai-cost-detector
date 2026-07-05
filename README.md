@@ -106,7 +106,7 @@ MCAICD/
 | 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
 | 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
 | 0.3 | 🟡 In progress | Authentication — local JWT foundation (register, login, refresh, logout, `/me`) complete. Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control planned. |
-| 0.4 | ⏳ Planned | Cloud integrations — Azure Cost Management, AWS Cost Explorer, GCP Billing export, unified normalised schema. |
+| 0.4 | 🟡 In progress | Cloud integrations — AWS Cost Explorer complete (auth, service, endpoint, tests). Azure Cost Management and GCP Billing export planned. Unified normalised schema in progress. |
 | 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
 | 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
 | 0.7 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
@@ -183,6 +183,7 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/auth/refresh   | Exchange a refresh token for a new access token |
 | http://localhost:8000/api/v1/auth/logout    | Stateless logout                            |
 | http://localhost:8000/api/v1/auth/me        | Current authenticated user profile          |
+| http://localhost:8000/api/v1/aws/costs       | Retrieve AWS costs grouped by service (requires AWS credentials) |
 
 ---
 
@@ -212,6 +213,117 @@ uvicorn app.main:app --reload
 > `docker-compose.yml` to initialise the PostgreSQL container. They are only
 > honoured on the **first** container start — changing them later does not
 > update existing database users.
+
+---
+
+## AWS Cost Explorer
+
+The AWS Cost Explorer integration retrieves and normalises AWS cost data
+grouped by service, exposing it through a JWT-protected REST endpoint.
+
+### Authentication
+
+Credentials are resolved via the **standard AWS credential chain** in the
+following order:
+
+1. **Environment variables** — `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+2. **AWS CLI profile** — `~/.aws/credentials`, selected via `AWS_PROFILE`.
+3. **IAM roles** — EC2 instance profile, ECS task role, or Lambda execution
+   role assigned by the runtime.
+
+No credentials are hardcoded in the application. `boto3` performs the
+resolution; the application only needs to set the region and (optionally)
+a profile.
+
+### Required IAM Permissions
+
+The AWS identity used by the application must allow Cost Explorer reads:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ce:GetCostAndUsage",
+                "ce:GetDimensionValues",
+                "ce:GetTags"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `AWS_DEFAULT_REGION` | AWS region for the Cost Explorer API. | `us-east-1` | No |
+| `AWS_PROFILE` | Named profile from `~/.aws/credentials`. | _(default)_ | No |
+| `AWS_ACCESS_KEY_ID` | AWS access key ID. | — | No* |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key. | — | No* |
+| `AWS_COST_EXPLORER_ENABLED` | Enable or disable the Cost Explorer integration. | `true` | No |
+
+*Required only when not using a profile or an IAM role.
+
+### API Endpoint
+
+**GET** `/api/v1/aws/costs`
+
+Retrieve AWS costs grouped by service.
+
+**Authentication:** JWT Bearer token required.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `start_date` | date | Yes | — | Start date (inclusive), ISO `YYYY-MM-DD`. |
+| `end_date` | date | Yes | — | End date (inclusive), ISO `YYYY-MM-DD`. Must be on or after `start_date`. |
+| `granularity` | string | No | `DAILY` | `DAILY` or `MONTHLY`. |
+
+**Example Request:**
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/v1/aws/costs?start_date=2024-01-01&end_date=2024-01-31&granularity=MONTHLY"
+```
+
+**Example Response:**
+
+```json
+{
+  "provider": "aws",
+  "currency": "USD",
+  "total_cost": 150.75,
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-01-31",
+    "granularity": "MONTHLY"
+  },
+  "services": [
+    {"service_name": "AmazonEC2", "cost": 100.50},
+    {"service_name": "AmazonS3", "cost": 50.25}
+  ]
+}
+```
+
+**Error Responses:**
+
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| 400 | `AWS_INVALID_DATE_RANGE` | Invalid date range or parameters. |
+| 401 | — | Missing or invalid JWT. |
+| 403 | `AWS_PERMISSIONS_ERROR` | AWS credentials lack Cost Explorer permissions. |
+| 422 | — | Request validation error (e.g. unknown granularity). |
+| 429 | `AWS_THROTTLING_ERROR` | AWS API rate-limiting. |
+| 500 | `AWS_CREDENTIALS_ERROR` | AWS credentials missing or invalid. |
+| 502 | `AWS_SERVICE_ERROR` | Upstream AWS service error. |
+
+The error code is also returned in the `X-Error-Code` response header for
+machine-readable handling.
 
 ---
 

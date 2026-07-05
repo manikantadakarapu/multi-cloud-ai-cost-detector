@@ -407,8 +407,10 @@ async def test_decode_tampered_token_raises() -> None:
         user_id="test-uuid",
         email="test@example.com",
     )
-    # Flip the last character to tamper the signature.
-    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    # Tamper with the payload so the signature no longer matches.
+    header, payload, signature = token.split(".")
+    tampered_payload = payload[:-1] + ("A" if payload[-1] != "A" else "B")
+    tampered = f"{header}.{tampered_payload}.{signature}"
     with pytest.raises(pyjwt.InvalidTokenError):
         decode_token(tampered)
 

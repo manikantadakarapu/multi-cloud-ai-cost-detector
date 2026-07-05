@@ -179,6 +179,11 @@ class CostExplorerService:
                 "provider": "aws",
                 "currency": "USD",
                 "total_cost": 0.0,
+                "date_range": {
+                    "start": start_date.isoformat(),
+                    "end": end_date.isoformat(),
+                    "granularity": granularity,
+                },
                 "services": [],
             }
 

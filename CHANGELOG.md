@@ -14,6 +14,84 @@ _No changes yet._
 
 ---
 
+## [0.4.0] - 2026-07-05
+
+### Added
+
+- AWS Cost Explorer settings in `app/core/config.py`:
+  `aws_default_region` (default `us-east-1`), `aws_profile`,
+  `aws_access_key_id`, `aws_secret_access_key`, and
+  `aws_cost_explorer_enabled` (default `true`), all bound via
+  `validation_alias` to `AWS_DEFAULT_REGION`, `AWS_PROFILE`,
+  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+  `AWS_COST_EXPLORER_ENABLED`. Documented in `.env.example`.
+- AWS Cost Explorer service (`app/services/aws/cost_explorer.py`) wrapping
+  `boto3` Cost Explorer `GetCostAndUsage` with paginated retrieval,
+  service-grouped normalisation, daily and monthly granularity, and
+  structured logging. The service short-circuits to an empty result when
+  `aws_cost_explorer_enabled` is `false` and surfaces typed exceptions for
+  missing credentials, throttling, missing permissions, invalid date
+  ranges, and upstream service errors.
+- AWS-specific exception hierarchy in `app/services/aws/exceptions.py`:
+  `AWSCostExplorerError` (base) and `AWSCredentialsError`,
+  `AWSThrottlingError`, `AWSPermissionsError`,
+  `AWSInvalidDateRangeError`, and `AWSServiceError`, each carrying a
+  stable `error_code`.
+- Pydantic v2 schemas for AWS in `app/schemas/aws.py`:
+  `AWSCostRequest` (start_date, end_date, granularity with
+  `Literal["DAILY", "MONTHLY"]` and an end-after-start validator),
+  `AWSServiceCost` (service_name, cost), and `AWSCostResponse`
+  (provider, currency, total_cost, date_range, services).
+- AWS Cost Explorer endpoint `GET /api/v1/aws/costs`
+  (`app/api/routes/aws.py`) mounted under the v1 API router and
+  protected by the existing `get_current_active_user` JWT dependency.
+  Maps AWS exceptions to `400 / 403 / 429 / 500 / 502` responses with the
+  error code returned in the `X-Error-Code` header.
+- Test coverage for the AWS Cost Explorer integration:
+  - `tests/test_aws_exceptions.py` — exception hierarchy and error codes.
+  - `tests/test_cost_explorer.py` — service-level success, credential,
+    throttling, permission, invalid date range, and disabled-flag paths
+    against a mocked boto3 client.
+  - `tests/test_aws_schemas.py` — request and response schema validation.
+  - `tests/test_aws_endpoint.py` — endpoint auth, success, validation,
+    and AWS-error mapping using the `auth_client` fixture.
+  - `tests/test_aws_integration.py` — full-flow integration tests for
+    daily and monthly granularity, empty responses, and the disabled-flag
+    short-circuit, with `CostExplorerService.get_costs` patched via
+    `AsyncMock`.
+- README documentation for AWS Cost Explorer: roadmap Sprint 0.4 row
+  updated to reflect AWS completion, an `AWS Cost Explorer` section
+  added with authentication chain, required IAM permissions JSON, the
+  AWS environment variable table, the `GET /api/v1/aws/costs` endpoint
+  reference, an example `curl` request, an example JSON response, and
+  the error-response table.
+
+### Changed
+
+- _Nothing._
+
+### Deprecated
+
+- _Nothing._
+
+### Removed
+
+- _Nothing._
+
+### Fixed
+
+- _Nothing._
+
+### Security
+
+- AWS credentials are never persisted by the application; they are
+  resolved at request time through the standard AWS credential chain
+  (env vars, profile, IAM role). No credentials are written to logs;
+  the structured logger only records the resolved region and request
+  metadata.
+
+---
+
 ## [0.3.0] - 2026-07-04
 
 ### Added
@@ -150,6 +228,7 @@ _No changes yet._
   diagnostic script so contributors do not paste credentials into source
   control during debugging.
 
-[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.3.0
 [0.1.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.1.0
