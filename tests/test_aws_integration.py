@@ -1,19 +1,26 @@
 """Integration tests for the AWS Cost Explorer endpoint.
 
-These tests exercise the full HTTP flow (auth + validation + service call
-+ response shaping) using the real FastAPI app via httpx, with the
-``CostExplorerService.get_costs`` boundary mocked so no AWS credentials are
-required.
+These tests exercise the full HTTP flow (auth + validation + provider
+call + response shaping) using the real FastAPI app via httpx, with
+the cloud-provider layer mocked so no AWS credentials are required.
 """
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
 
 from app.core.config import settings
+from app.providers import CostResponse, ServiceCost
+
+
+def _build_mock_provider(get_costs: AsyncMock) -> MagicMock:
+    mock_provider = MagicMock()
+    mock_provider.provider_name.return_value = "aws"
+    mock_provider.get_costs = get_costs
+    return mock_provider
 
 
 class TestAWSIntegration:
@@ -22,22 +29,20 @@ class TestAWSIntegration:
     @pytest.mark.asyncio
     async def test_full_flow_daily(self, auth_client: AsyncClient) -> None:
         """Daily granularity full flow returns normalized costs."""
-        mock_response = {
-            "provider": "aws",
-            "currency": "USD",
-            "total_cost": 1234.56,
-            "date_range": {
+        cost_response = CostResponse(
+            provider="aws",
+            currency="USD",
+            total_cost=1234.56,
+            date_range={
                 "start": "2024-01-01",
                 "end": "2024-01-02",
                 "granularity": "DAILY",
             },
-            "services": [{"service_name": "AmazonEC2", "cost": 1234.56}],
-        }
-        with patch(
-            "app.api.routes.aws.CostExplorerService.get_costs",
-            new_callable=AsyncMock,
-        ) as mock_get:
-            mock_get.return_value = mock_response
+            services=[ServiceCost(service_name="AmazonEC2", cost=1234.56)],
+        )
+        mock_provider = _build_mock_provider(AsyncMock(return_value=cost_response))
+
+        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
             response = await auth_client.get(
                 "/api/v1/aws/costs",
                 params={
@@ -57,27 +62,25 @@ class TestAWSIntegration:
             assert len(data["services"]) == 1
             assert data["services"][0]["service_name"] == "AmazonEC2"
             assert data["services"][0]["cost"] == 1234.56
-            mock_get.assert_awaited_once()
+            mock_provider.get_costs.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_full_flow_monthly(self, auth_client: AsyncClient) -> None:
         """Monthly granularity full flow returns normalized costs."""
-        mock_response = {
-            "provider": "aws",
-            "currency": "USD",
-            "total_cost": 5000.00,
-            "date_range": {
+        cost_response = CostResponse(
+            provider="aws",
+            currency="USD",
+            total_cost=5000.00,
+            date_range={
                 "start": "2024-01-01",
                 "end": "2024-01-31",
                 "granularity": "MONTHLY",
             },
-            "services": [{"service_name": "AmazonRDS", "cost": 5000.00}],
-        }
-        with patch(
-            "app.api.routes.aws.CostExplorerService.get_costs",
-            new_callable=AsyncMock,
-        ) as mock_get:
-            mock_get.return_value = mock_response
+            services=[ServiceCost(service_name="AmazonRDS", cost=5000.00)],
+        )
+        mock_provider = _build_mock_provider(AsyncMock(return_value=cost_response))
+
+        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
             response = await auth_client.get(
                 "/api/v1/aws/costs",
                 params={
@@ -93,27 +96,25 @@ class TestAWSIntegration:
             assert data["date_range"]["granularity"] == "MONTHLY"
             assert len(data["services"]) == 1
             assert data["services"][0]["service_name"] == "AmazonRDS"
-            mock_get.assert_awaited_once()
+            mock_provider.get_costs.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_empty_response(self, auth_client: AsyncClient) -> None:
         """Empty cost data returns empty services list and zero total."""
-        mock_response = {
-            "provider": "aws",
-            "currency": "USD",
-            "total_cost": 0.0,
-            "date_range": {
+        cost_response = CostResponse(
+            provider="aws",
+            currency="USD",
+            total_cost=0.0,
+            date_range={
                 "start": "2024-01-01",
                 "end": "2024-01-02",
                 "granularity": "DAILY",
             },
-            "services": [],
-        }
-        with patch(
-            "app.api.routes.aws.CostExplorerService.get_costs",
-            new_callable=AsyncMock,
-        ) as mock_get:
-            mock_get.return_value = mock_response
+            services=[],
+        )
+        mock_provider = _build_mock_provider(AsyncMock(return_value=cost_response))
+
+        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
             response = await auth_client.get(
                 "/api/v1/aws/costs",
                 params={
@@ -131,21 +132,38 @@ class TestAWSIntegration:
     @pytest.mark.asyncio
     async def test_cost_explorer_disabled(self, auth_client: AsyncClient) -> None:
         """When Cost Explorer is disabled, the endpoint returns an empty 200 result."""
+        cost_response = CostResponse(
+            provider="aws",
+            currency="USD",
+            total_cost=0.0,
+            date_range={
+                "start": "2024-01-01",
+                "end": "2024-01-02",
+                "granularity": "DAILY",
+            },
+            services=[],
+        )
+        mock_provider = _build_mock_provider(AsyncMock(return_value=cost_response))
+
         original = settings.aws_cost_explorer_enabled
         settings.aws_cost_explorer_enabled = False
         try:
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
-            assert response.status_code == 200
-            data = response.json()
-            assert data["services"] == []
-            assert data["total_cost"] == 0.0
-            assert data["provider"] == "aws"
-            assert data["date_range"]["granularity"] == "DAILY"
+            with patch(
+                "app.providers.aws.AWSCloudProvider",
+                return_value=mock_provider,
+            ):
+                response = await auth_client.get(
+                    "/api/v1/aws/costs",
+                    params={
+                        "start_date": "2024-01-01",
+                        "end_date": "2024-01-02",
+                    },
+                )
+                assert response.status_code == 200
+                data = response.json()
+                assert data["services"] == []
+                assert data["total_cost"] == 0.0
+                assert data["provider"] == "aws"
+                assert data["date_range"]["granularity"] == "DAILY"
         finally:
             settings.aws_cost_explorer_enabled = original
