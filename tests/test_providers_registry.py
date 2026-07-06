@@ -18,6 +18,7 @@ from app.providers import (
     get_provider_factory,
     register_provider,
 )
+from app.providers.azure import AzureCloudProvider
 
 
 class FakeCloudProvider(CloudProvider):
@@ -116,6 +117,13 @@ class TestProviderRegistry:
         provider = factory()
         assert isinstance(provider, FakeCloudProvider)
         assert provider.provider_name() == "fake"
+
+    def test_azure_provider_is_registered(self) -> None:
+        """``app.providers.azure`` registers a factory for ``"azure"``."""
+        factory = get_provider_factory("azure")
+        provider = factory()
+        assert isinstance(provider, AzureCloudProvider)
+        assert provider.provider_name() == "azure"
 
 
 class TestGetProviderDependency:

@@ -113,6 +113,28 @@ class Settings(BaseSettings):
         validation_alias="AWS_COST_EXPLORER_ENABLED",
     )
 
+    # --- Azure Cost Management ---
+    azure_cost_management_enabled: bool = Field(
+        default=True,
+        validation_alias="AZURE_COST_MANAGEMENT_ENABLED",
+    )
+    azure_subscription_id: str | None = Field(
+        default=None,
+        validation_alias="AZURE_SUBSCRIPTION_ID",
+    )
+    azure_tenant_id: str | None = Field(
+        default=None,
+        validation_alias="AZURE_TENANT_ID",
+    )
+    azure_client_id: str | None = Field(
+        default=None,
+        validation_alias="AZURE_CLIENT_ID",
+    )
+    azure_client_secret: str | None = Field(
+        default=None,
+        validation_alias="AZURE_CLIENT_SECRET",
+    )
+
     @computed_field
     @property
     def is_production(self) -> bool:

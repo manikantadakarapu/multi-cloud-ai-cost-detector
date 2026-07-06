@@ -1,0 +1,25 @@
+"""Pydantic v2 schemas for Azure Cost Management API."""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class AzureCostRequest(BaseModel):
+    """Request for Azure cost retrieval."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    start_date: date = Field(...)
+    end_date: date = Field(...)
+    granularity: Literal["DAILY", "MONTHLY"] = Field(default="DAILY")
+
+    @field_validator("end_date")
+    @classmethod
+    def end_after_start(cls, v: date, info) -> date:
+        if info.data.get("start_date") and v < info.data["start_date"]:
+            raise ValueError("end_date must be on or after start_date")
+        return v

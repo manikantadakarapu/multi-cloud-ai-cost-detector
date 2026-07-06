@@ -16,6 +16,9 @@ multiple cloud providers (AWS, GCP, Azure, etc.). It provides:
 from __future__ import annotations
 
 from app.providers import aws as _aws_provider  # noqa: F401 -- registers "aws" factory
+from app.providers import (
+    azure as _azure_provider,  # noqa: F401 -- registers "azure" factory
+)
 from app.providers.base import CloudProvider
 from app.providers.exceptions import (
     ProviderCredentialsError,
