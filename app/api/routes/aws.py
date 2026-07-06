@@ -1,4 +1,10 @@
-"""AWS Cost Explorer API routes."""
+"""AWS Cost Explorer API routes.
+
+The route now resolves a :class:`CloudProvider` implementation via the
+provider registry, keeping the HTTP contract (path, query parameters,
+status codes, response body) identical to the previous direct-service
+implementation.
+"""
 
 from __future__ import annotations
 
@@ -8,10 +14,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.auth.dependencies import get_current_active_user
 from app.auth.models import User
-from app.core.config import settings
 from app.core.logging import get_logger
-from app.schemas.aws import AWSCostRequest, AWSCostResponse
-from app.services.aws.cost_explorer import CostExplorerService
+from app.providers import CloudProvider, get_provider
+from app.providers.exceptions import (
+    ProviderCredentialsError,
+    ProviderInvalidDateRangeError,
+    ProviderPermissionsError,
+    ProviderServiceError,
+    ProviderThrottlingError,
+)
+from app.providers.schemas import CostResponse
+from app.schemas.aws import AWSCostRequest
 from app.services.aws.exceptions import (
     AWSCredentialsError,
     AWSInvalidDateRangeError,
@@ -25,14 +38,9 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/aws", tags=["aws"])
 
 
-def get_cost_explorer_service() -> CostExplorerService:
-    """Dependency providing CostExplorerService instance."""
-    return CostExplorerService(settings)
-
-
 @router.get(
     "/costs",
-    response_model=AWSCostResponse,
+    response_model=CostResponse,
     summary="Retrieve AWS costs",
     description=(
         "Retrieve normalized AWS cost data grouped by service. "
@@ -53,9 +61,9 @@ def get_cost_explorer_service() -> CostExplorerService:
 async def get_aws_costs(
     request: Annotated[AWSCostRequest, Query()],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    service: Annotated[CostExplorerService, Depends(get_cost_explorer_service)],
-) -> AWSCostResponse:
-    """Retrieve AWS costs grouped by service."""
+    provider: Annotated[CloudProvider, Depends(get_provider("aws"))],
+) -> CostResponse:
+    """Retrieve AWS costs grouped by service via the provider abstraction."""
     logger.info(
         "aws_costs_request",
         extra={
@@ -67,7 +75,7 @@ async def get_aws_costs(
     )
 
     try:
-        result = await service.get_costs(
+        result = await provider.get_costs(
             start_date=request.start_date,
             end_date=request.end_date,
             granularity=request.granularity,
@@ -75,36 +83,36 @@ async def get_aws_costs(
         logger.info(
             "aws_costs_response",
             extra={
-                "total_cost": result.get("total_cost", 0),
-                "service_count": len(result.get("services", [])),
+                "total_cost": result.total_cost,
+                "service_count": len(result.services),
             },
         )
-        return AWSCostResponse(**result)
-    except AWSInvalidDateRangeError as e:
+        return result
+    except (AWSInvalidDateRangeError, ProviderInvalidDateRangeError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except AWSCredentialsError as e:
+    except (AWSCredentialsError, ProviderCredentialsError) as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except AWSThrottlingError as e:
+    except (AWSThrottlingError, ProviderThrottlingError) as e:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except AWSPermissionsError as e:
+    except (AWSPermissionsError, ProviderPermissionsError) as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except AWSServiceError as e:
+    except (AWSServiceError, ProviderServiceError) as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=e.message,

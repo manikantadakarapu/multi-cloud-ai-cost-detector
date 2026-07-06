@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-06-28 (Sprint 0.2)
+> **Last Updated:** 2026-07-06 (Sprint 0.5)
 
 ---
 
@@ -20,6 +20,7 @@
 
 - [Overview](#overview)
 - [High-Level Architecture](#high-level-architecture)
+- [Cloud Provider Abstraction](#cloud-provider-abstraction)
 - [System Components](#system-components)
   - [Backend](#backend)
   - [Database](#database)
@@ -130,6 +131,265 @@ operation flows through a service. This is the seam that makes the domain
 logic reusable by container orchestrators, startup scripts, and background
 workers without going through FastAPI — the same pattern already used by
 `HealthService` today.
+
+---
+
+## Cloud Provider Abstraction
+
+> **Status:** Live — Sprint 0.5. AWS is the first concrete implementation
+> behind the shared abstraction. Azure and GCP implementations are planned
+> but intentionally **out of scope** for this sprint; only the AWS refactor
+> and the shared abstraction are delivered.
+
+The cloud-provider abstraction gives the rest of the application a single,
+uniform seam for talking to any cloud vendor. The platform no longer
+imports the AWS service layer directly from route handlers; instead every
+cloud integration goes through `app/providers/`, and adding a new vendor is
+a localised change rather than a cross-cutting rewrite. AWS is the
+reference implementation and proves the contract end-to-end.
+
+```mermaid
+graph TD
+    subgraph "API Layer (app/api/routes/)"
+        AWSRoute["aws.py<br/>GET /api/v1/aws/costs"]
+        AzureRoute["azure.py<br/>(future — Sprint 0.6+)"]
+        GCPRoute["gcp.py<br/>(future — Sprint 0.6+)"]
+    end
+
+    subgraph "Provider Abstraction (app/providers/)"
+        ABC["CloudProvider<br/>(ABC — base.py)"]
+        AWS["AWSCloudProvider<br/>aws/provider.py"]
+        Azure["AzureCloudProvider<br/>(future)"]
+        GCP["GCPCloudProvider<br/>(future)"]
+        Registry["Manual Registry<br/>registry.py"]
+    end
+
+    subgraph "Schemas (app/providers/schemas.py)"
+        Resp["CostResponse / ServiceCost<br/>(provider-agnostic)"]
+    end
+
+    subgraph "Mappers"
+        AWSMap["AWSMapper<br/>aws/mapper.py"]
+        AzureMap["AzureMapper<br/>(future)"]
+        GCPMap["GCPMapper<br/>(future)"]
+    end
+
+    AWSRoute -->|"Depends(get_provider('aws'))"| Registry
+    AzureRoute -.->|"Depends(get_provider('azure'))"| Registry
+    GCPRoute -.->|"Depends(get_provider('gcp'))"| Registry
+
+    Registry -->|factory| AWS
+    Registry -.->|factory| Azure
+    Registry -.->|factory| GCP
+
+    AWS -->|subclass| ABC
+    Azure -.->|subclass| ABC
+    GCP -.->|subclass| ABC
+
+    AWS --> AWSMap
+    Azure -.-> AzureMap
+    GCP -.-> GCPMap
+
+    AWSMap --> Resp
+    AzureMap -.-> Resp
+    GCPMap -.-> Resp
+```
+
+### `CloudProvider` interface
+
+The single contract every cloud vendor must satisfy is the
+`CloudProvider` ABC in `app/providers/base.py`. It declares four abstract
+methods:
+
+| Method | Responsibility |
+| ------ | -------------- |
+| `provider_name() -> str` | Return the short identifier for this provider (e.g. `"aws"`, `"azure"`, `"gcp"`). Used for logging and as the `provider` field on `CostResponse`. |
+| `authenticate() -> None` | Initialise the underlying vendor client using the configured credentials. Credential errors are allowed to propagate so callers can surface them via `validate_credentials` or `get_costs`. |
+| `validate_credentials() -> bool` | Return `True` only when the configured credentials are usable. Implementations typically call `authenticate()` and translate credential errors into a `False` return. |
+| `async def get_costs(start_date, end_date, granularity) -> CostResponse` | Retrieve normalized costs for the date range and granularity. Implementations translate vendor-specific exceptions into the provider-agnostic hierarchy (see below) so route handlers can react without depending on the underlying SDK. |
+
+The interface deliberately returns the normalized `CostResponse` rather
+than a vendor-specific dict. That is what makes the rest of the
+application provider-agnostic.
+
+### Normalized response model
+
+The shapes that flow out of `get_costs` are defined in
+`app/providers/schemas.py` and are shared by every vendor:
+
+* `CostResponse` — the top-level payload returned by the route. Fields:
+  `provider` (the short identifier), `currency` (defaults to `"USD"`),
+  `total_cost`, `date_range` (a `dict[str, str]` carrying `start`,
+  `end`, and `granularity`), and `services` (a list of `ServiceCost`).
+* `ServiceCost` — a single per-service row: `service_name` (str) and
+  `cost` (float, `>= 0`).
+
+Both models use `model_config = ConfigDict(extra="forbid")` so callers
+cannot accidentally smuggle vendor-specific fields through the contract.
+`ServiceCost` additionally sets `from_attributes=True` so it can be built
+from ORM-style objects in the future. The `ge=0` constraint on cost fields
+makes "negative spend" a 422 rather than a silent zero at the boundary.
+
+### Mapper responsibility
+
+Concrete providers are paired with a stateless mapper whose only job is to
+translate the vendor's response shape into `CostResponse`. For AWS that is
+`app/providers/aws/mapper.py` (`AWSMapper`). The mapper:
+
+* Receives the raw dict already produced by the underlying vendor service
+  (`CostExplorerService.get_costs`) along with the original request
+  parameters (`start_date`, `end_date`, `granularity`).
+* Defensively fills in `date_range` and `services` if the upstream
+  response omits them, so callers never have to special-case partial
+  payloads.
+* Returns a fully validated `CostResponse`.
+
+Keeping mapping in its own class means the translation logic can be
+unit-tested without instantiating any cloud SDK or HTTP client.
+
+### Manual registry and `Depends` injection
+
+Provider lookup goes through `app/providers/registry.py`, which is a
+deliberately minimal, dependency-free registry:
+
+```python
+PROVIDER_REGISTRY: dict[str, Callable[[], CloudProvider]] = {}
+```
+
+* `register_provider(name, factory)` — stores a zero-argument factory
+  under `name`. Re-registering an existing name overwrites the entry,
+  which keeps tests and tooling able to swap implementations without
+  restarting the process.
+* `get_provider_factory(name)` — returns the registered factory or
+  raises `ProviderError(error_code="PROVIDER_NOT_REGISTERED")` when the
+  name is unknown.
+* `get_provider(name)` — returns a `Depends`-compatible callable that
+  builds and returns a fresh `CloudProvider` instance per request. Routes
+  consume it like any other FastAPI dependency:
+
+  ```python
+  provider: Annotated[CloudProvider, Depends(get_provider("aws"))]
+  ```
+
+The AWS package (`app/providers/aws/__init__.py`) registers itself at
+import time with a single line:
+
+```python
+register_provider("aws", lambda: AWSCloudProvider())
+```
+
+Because `app/providers/__init__.py` imports the `aws` sub-package, that
+registration runs as a side-effect of importing the abstraction package,
+so every route that uses `Depends(get_provider("aws"))` resolves to a
+live instance with no extra wiring.
+
+### Provider-agnostic exceptions
+
+`app/providers/exceptions.py` defines the `ProviderError` hierarchy that
+every concrete provider is expected to raise:
+
+| Exception | Default `error_code` | Intended HTTP mapping |
+| --------- | -------------------- | --------------------- |
+| `ProviderError` (base) | `PROVIDER_ERROR` | 500 (fallback) |
+| `ProviderCredentialsError` | `PROVIDER_CREDENTIALS_ERROR` | 500 |
+| `ProviderPermissionsError` | `PROVIDER_PERMISSIONS_ERROR` | 403 |
+| `ProviderInvalidDateRangeError` | `PROVIDER_INVALID_DATE_RANGE` | 400 |
+| `ProviderThrottlingError` | `PROVIDER_THROTTLING_ERROR` | 429 |
+| `ProviderServiceError` | `PROVIDER_SERVICE_ERROR` | 502 |
+
+Every concrete provider must translate its vendor-specific errors into
+these types. The AWS implementation (`AWSCloudProvider.get_costs`) does
+this explicitly: it catches `AWSCredentialsError`, `AWSThrottlingError`,
+`AWSPermissionsError`, `AWSInvalidDateRangeError`, `AWSServiceError`,
+`NoCredentialsError`, and `ClientError`, and re-raises each as the
+matching provider-agnostic exception.
+
+The AWS route (`app/api/routes/aws.py`) is in a transition window: it
+imports **both** the old AWS-specific exceptions from
+`app/services/aws/exceptions.py` and the new provider-agnostic ones from
+`app/providers/exceptions.py`, and catches each pair with the same HTTP
+mapping. This dual mapping guarantees that callers see the same status
+codes and `X-Error-Code` headers regardless of which exception layer the
+underlying service raises:
+
+```python
+except (AWSInvalidDateRangeError, ProviderInvalidDateRangeError) as e:
+    raise HTTPException(status_code=400, detail=e.message,
+                        headers={"X-Error-Code": e.error_code}) from e
+except (AWSCredentialsError, ProviderCredentialsError) as e:
+    raise HTTPException(status_code=500, ...) from e
+except (AWSThrottlingError, ProviderThrottlingError) as e:
+    raise HTTPException(status_code=429, ...) from e
+except (AWSPermissionsError, ProviderPermissionsError) as e:
+    raise HTTPException(status_code=403, ...) from e
+except (AWSServiceError, ProviderServiceError) as e:
+    raise HTTPException(status_code=502, ...) from e
+```
+
+Once the AWS service layer is fully retired, the AWS-specific `except`
+clauses can be removed and the route can drop the dual import.
+
+### Extension guide: adding Azure or GCP
+
+Adding a new cloud vendor is a four-step, additive change. Each step is
+localised to a new directory under `app/providers/` plus a single new
+route file.
+
+1. **Implement the provider.** Create `app/providers/<name>/provider.py`
+   with a concrete subclass of `CloudProvider`:
+
+   ```python
+   class AzureCloudProvider(CloudProvider):
+       def provider_name(self) -> str: return "azure"
+       def authenticate(self) -> None: ...
+       def validate_credentials(self) -> bool: ...
+       async def get_costs(self, start_date, end_date, granularity) -> CostResponse: ...
+   ```
+
+   Translate every vendor exception into the
+   `app.providers.exceptions.ProviderError` hierarchy so the route layer
+   stays SDK-agnostic.
+
+2. **Implement the mapper.** Create `app/providers/<name>/mapper.py`
+   with a stateless class that converts the vendor response into
+   `CostResponse` (mirroring `AWSMapper`). Keep mapping separate from
+   I/O so it can be unit-tested in isolation.
+
+3. **Register the factory.** In `app/providers/<name>/__init__.py`,
+   import the implementation and the mapper and register a zero-argument
+   factory:
+
+   ```python
+   from app.providers.registry import register_provider
+   from app.providers.azure.provider import AzureCloudProvider
+
+   register_provider("azure", lambda: AzureCloudProvider())
+   ```
+
+   Because `app/providers/__init__.py` re-exports the public API, the
+   Azure sub-package should be imported there (or its `__init__` should
+   be picked up transitively) so registration runs at process start.
+
+4. **Add a route.** Create `app/api/routes/<name>.py` with a FastAPI
+   router that resolves the implementation through the registry:
+
+   ```python
+   provider: Annotated[CloudProvider, Depends(get_provider("azure"))]
+   ```
+
+   Return `CostResponse` and catch each `ProviderError` subclass,
+   mapping it to the HTTP status codes documented in the table above.
+   Mount the router under `/api/v1` from `app/api/router.py`.
+
+### Scope note
+
+This sprint delivers the **shared abstraction and the AWS refactor only**:
+the `CloudProvider` ABC, the `CostResponse` / `ServiceCost` schemas, the
+manual registry, the `ProviderError` hierarchy, `AWSCloudProvider`,
+`AWSMapper`, and the AWS route updated to consume the registry via
+`Depends`. Azure (`AzureCloudProvider`) and GCP (`GCPCloudProvider`)
+implementations are **intentionally out of scope** and will land in a
+later sprint following the extension guide above.
 
 ---
 
