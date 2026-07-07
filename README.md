@@ -188,6 +188,7 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/auth/logout    | Stateless logout                            |
 | http://localhost:8000/api/v1/auth/me        | Current authenticated user profile          |
 | http://localhost:8000/api/v1/aws/costs       | Retrieve AWS costs grouped by service (requires AWS credentials) |
+| http://localhost:8000/api/v1/azure/costs     | Retrieve Azure costs grouped by service (requires Azure credentials) |
 
 ---
 
@@ -325,6 +326,113 @@ curl -H "Authorization: Bearer <token>" \
 | 429 | `AWS_THROTTLING_ERROR` | AWS API rate-limiting. |
 | 500 | `AWS_CREDENTIALS_ERROR` | AWS credentials missing or invalid. |
 | 502 | `AWS_SERVICE_ERROR` | Upstream AWS service error. |
+
+The error code is also returned in the `X-Error-Code` response header for
+machine-readable handling.
+
+---
+
+## Azure Cost Management
+
+The Azure Cost Management integration retrieves and normalises Azure cost
+data grouped by service through the Azure Cost Management Query API,
+exposing it through a JWT-protected REST endpoint.
+
+### Authentication
+
+Azure credentials are resolved using the **DefaultAzureCredential** chain
+by default. This chain automatically tries, in order:
+
+1. **Environment variables** — `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
+   `AZURE_CLIENT_SECRET` (used by `EnvironmentCredential` inside the chain).
+2. **Managed identity** — Azure VM / App Service / AKS workload identity.
+3. **Azure CLI** — tokens from an authenticated `az login` session.
+4. **Azure PowerShell**, **Visual Studio Code**, and other token sources.
+
+If `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET` are all
+set explicitly, the provider uses **ClientSecretCredential** instead of the
+full chain. No credentials are hardcoded in the application.
+
+The subscription used by the endpoint is resolved from `AZURE_SUBSCRIPTION_ID`
+when set; otherwise the provider lists subscriptions visible to the credential
+and uses the first enabled subscription.
+
+### Required Azure Permissions
+
+The identity used by the application needs read access to Cost Management
+for the subscription scope. The built-in roles below are sufficient:
+
+- **Cost Management Reader**
+- **Billing Reader**
+- **Reader** (also grants resource read access)
+
+### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `AZURE_SUBSCRIPTION_ID` | Target Azure subscription GUID. When omitted, the provider resolves the first enabled subscription visible to the credential. | — | No |
+| `AZURE_TENANT_ID` | Azure AD tenant GUID. Required for `ClientSecretCredential` fallback. | — | No* |
+| `AZURE_CLIENT_ID` | Service principal application (client) ID. Required for `ClientSecretCredential` fallback. | — | No* |
+| `AZURE_CLIENT_SECRET` | Service principal client secret. Required for `ClientSecretCredential` fallback. | — | No* |
+| `AZURE_REQUEST_TIMEOUT` | Timeout in seconds for Azure Cost Management and subscription API calls. | `60` | No |
+| `AZURE_COST_MANAGEMENT_ENABLED` | Enable or disable the Azure Cost Management integration. | `true` | No |
+
+*Required only when explicitly using `ClientSecretCredential` instead of
+`DefaultAzureCredential`.
+
+### API Endpoint
+
+**GET** `/api/v1/azure/costs`
+
+Retrieve Azure costs grouped by service.
+
+**Authentication:** JWT Bearer token required.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `start_date` | date | Yes | — | Start date (inclusive), ISO `YYYY-MM-DD`. |
+| `end_date` | date | Yes | — | End date (inclusive), ISO `YYYY-MM-DD`. Must be on or after `start_date`. |
+| `granularity` | string | No | `DAILY` | `DAILY` or `MONTHLY`. |
+
+**Example Request:**
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/v1/azure/costs?start_date=2024-01-01&end_date=2024-01-31&granularity=MONTHLY"
+```
+
+**Example Response:**
+
+```json
+{
+  "provider": "azure",
+  "currency": "USD",
+  "total_cost": 230.48,
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-01-31",
+    "granularity": "MONTHLY"
+  },
+  "services": [
+    {"service_name": "Virtual Machines", "cost": 180.00},
+    {"service_name": "Azure Blob Storage", "cost": 50.48}
+  ]
+}
+```
+
+**Error Responses:**
+
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| 400 | `AZURE_INVALID_SUBSCRIPTION` | Invalid date range, parameters, or subscription. |
+| 401 | — | Missing or invalid JWT. |
+| 403 | `AZURE_PERMISSIONS_ERROR` | Azure credentials lack Cost Management permissions. |
+| 422 | — | Request validation error (e.g. unknown granularity). |
+| 429 | `AZURE_THROTTLING_ERROR` | Azure API rate-limiting. |
+| 500 | `AZURE_CREDENTIALS_ERROR` | Azure credentials missing or invalid. |
+| 502 | `AZURE_SERVICE_ERROR` | Upstream Azure service error. |
 
 The error code is also returned in the `X-Error-Code` response header for
 machine-readable handling.
