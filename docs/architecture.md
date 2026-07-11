@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-07-06 (Sprint 0.5)
+> **Last Updated:** 2026-07-06 (Sprint 0.6)
 
 ---
 
@@ -136,30 +136,31 @@ workers without going through FastAPI — the same pattern already used by
 
 ## Cloud Provider Abstraction
 
-> **Status:** Live — Sprint 0.5. AWS is the first concrete implementation
-> behind the shared abstraction. Azure and GCP implementations are planned
-> but intentionally **out of scope** for this sprint; only the AWS refactor
-> and the shared abstraction are delivered.
+> **Status:** Live — Sprint 0.6. AWS (Sprint 0.5) and Azure (Sprint 0.6) are
+> concrete implementations behind the shared abstraction. GCP remains
+> planned for a later sprint; only AWS and Azure are delivered today.
 
 The cloud-provider abstraction gives the rest of the application a single,
 uniform seam for talking to any cloud vendor. The platform no longer
-imports the AWS service layer directly from route handlers; instead every
+imports vendor service layers directly from route handlers; instead every
 cloud integration goes through `app/providers/`, and adding a new vendor is
 a localised change rather than a cross-cutting rewrite. AWS is the
-reference implementation and proves the contract end-to-end.
+reference implementation; Azure follows the same contract end-to-end and
+exercises every part of the abstraction, including subscription discovery
+and a vendor-specific credential chain.
 
 ```mermaid
 graph TD
     subgraph "API Layer (app/api/routes/)"
         AWSRoute["aws.py<br/>GET /api/v1/aws/costs"]
-        AzureRoute["azure.py<br/>(future — Sprint 0.6+)"]
-        GCPRoute["gcp.py<br/>(future — Sprint 0.6+)"]
+        AzureRoute["azure.py<br/>GET /api/v1/azure/costs"]
+        GCPRoute["gcp.py<br/>(future — Sprint 0.7+)"]
     end
 
     subgraph "Provider Abstraction (app/providers/)"
         ABC["CloudProvider<br/>(ABC — base.py)"]
         AWS["AWSCloudProvider<br/>aws/provider.py"]
-        Azure["AzureCloudProvider<br/>(future)"]
+        Azure["AzureCloudProvider<br/>azure/provider.py"]
         GCP["GCPCloudProvider<br/>(future)"]
         Registry["Manual Registry<br/>registry.py"]
     end
@@ -170,28 +171,28 @@ graph TD
 
     subgraph "Mappers"
         AWSMap["AWSMapper<br/>aws/mapper.py"]
-        AzureMap["AzureMapper<br/>(future)"]
+        AzureMap["AzureMapper<br/>azure/mapper.py"]
         GCPMap["GCPMapper<br/>(future)"]
     end
 
     AWSRoute -->|"Depends(get_provider('aws'))"| Registry
-    AzureRoute -.->|"Depends(get_provider('azure'))"| Registry
+    AzureRoute -->|"Depends(get_provider('azure'))"| Registry
     GCPRoute -.->|"Depends(get_provider('gcp'))"| Registry
 
     Registry -->|factory| AWS
-    Registry -.->|factory| Azure
+    Registry -->|factory| Azure
     Registry -.->|factory| GCP
 
     AWS -->|subclass| ABC
-    Azure -.->|subclass| ABC
+    Azure -->|subclass| ABC
     GCP -.->|subclass| ABC
 
     AWS --> AWSMap
-    Azure -.-> AzureMap
+    Azure --> AzureMap
     GCP -.-> GCPMap
 
     AWSMap --> Resp
-    AzureMap -.-> Resp
+    AzureMap --> Resp
     GCPMap -.-> Resp
 ```
 
@@ -271,17 +272,142 @@ PROVIDER_REGISTRY: dict[str, Callable[[], CloudProvider]] = {}
   provider: Annotated[CloudProvider, Depends(get_provider("aws"))]
   ```
 
-The AWS package (`app/providers/aws/__init__.py`) registers itself at
-import time with a single line:
+The AWS and Azure packages (`app/providers/aws/__init__.py` and
+`app/providers/azure/__init__.py`) each register themselves at import
+time with a single line:
 
 ```python
 register_provider("aws", lambda: AWSCloudProvider())
+register_provider("azure", lambda: AzureCloudProvider())
 ```
 
-Because `app/providers/__init__.py` imports the `aws` sub-package, that
-registration runs as a side-effect of importing the abstraction package,
-so every route that uses `Depends(get_provider("aws"))` resolves to a
-live instance with no extra wiring.
+Because `app/providers/__init__.py` imports both sub-packages, those
+registrations run as a side-effect of importing the abstraction package,
+so every route that uses `Depends(get_provider("aws"))` or
+`Depends(get_provider("azure"))` resolves to a live instance with no
+extra wiring.
+
+### Implemented providers
+
+The shared abstraction is satisfied by two concrete providers today:
+
+| Provider | Class | Mapper | Service module | Route | Registry key |
+| -------- | ----- | ------ | -------------- | ----- | ------------ |
+| AWS | `AWSCloudProvider` (`app/providers/aws/provider.py`) | `AWSMapper` (`app/providers/aws/mapper.py`) | `app/services/aws/cost_explorer.py` | `GET /api/v1/aws/costs` | `"aws"` |
+| Azure | `AzureCloudProvider` (`app/providers/azure/provider.py`) | `AzureMapper` (`app/providers/azure/mapper.py`) | `app/services/azure/cost_management.py` | `GET /api/v1/azure/costs` | `"azure"` |
+| GCP | `GCPCloudProvider` *(planned)* | `GCPMapper` *(planned)* | *(planned)* | *(planned)* | `"gcp"` |
+
+The AWS row is the reference implementation delivered in Sprint 0.5.
+The Azure row was added in Sprint 0.6 and is described in detail below.
+The GCP row is the next vendor to land; until then the registry has no
+`"gcp"` entry and `Depends(get_provider("gcp"))` will raise
+`ProviderError(error_code="PROVIDER_NOT_REGISTERED")`.
+
+### Azure Provider
+
+Azure is the second concrete implementation of the `CloudProvider`
+abstraction, delivered in Sprint 0.6. The implementation lives under
+`app/providers/azure/` and the route is mounted at
+`GET /api/v1/azure/costs`. It exercises every part of the abstraction —
+the registry, the mapper, the provider-agnostic exception hierarchy,
+and a vendor-specific credential chain — using the Azure Cost
+Management Query API as the data source.
+
+#### Authentication
+
+`AzureCloudProvider.authenticate()` delegates to
+`AzureCostManagementService._ensure_credential()`, which builds an
+Azure SDK credential from the configured settings:
+
+* **Service-principal path** — when `AZURE_TENANT_ID`,
+  `AZURE_CLIENT_ID`, and `AZURE_CLIENT_SECRET` are all set, the service
+  constructs an explicit `ClientSecretCredential`. This is the
+  recommended path for non-interactive automation (CI, scheduled
+  ingestion, containers without a managed identity).
+* **Default credential chain** — otherwise the service constructs
+  `DefaultAzureCredential`, which tries the following sources in order
+  and uses the first that succeeds:
+  * **Managed Identity** — for workloads running inside Azure (App
+    Service, Functions, AKS, VMs with the managed-identity extension).
+  * **Azure CLI** — the developer's `az login` session, used in local
+    development. No environment variables are required.
+  * **Environment variables** — service-principal credentials supplied
+    via `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, and
+    `AZURE_CLIENT_SECRET`, surfaced by `EnvironmentCredential` inside
+    the chain.
+
+Credential failures surface as `AzureCredentialsError`, which the
+provider translates into the provider-agnostic
+`ProviderCredentialsError` (HTTP 500). The disabled flag
+`AZURE_COST_MANAGEMENT_ENABLED` short-circuits all of the above: when
+set to `False` the service returns an empty `CostResponse` without
+constructing any SDK client.
+
+#### Subscription ID resolution
+
+`AzureCostManagementService._resolve_subscription_id()` resolves the
+target subscription as follows:
+
+1. **Configured subscription** — if `AZURE_SUBSCRIPTION_ID` is set,
+   that value is used verbatim. No call to the Subscription API is
+   made, so a request that has a configured subscription never touches
+   `SubscriptionClient`.
+2. **Default subscription discovery** — otherwise the service queries
+   `SubscriptionClient.subscriptions.list()` and returns the first
+   subscription whose `state == "Enabled"`.
+
+Errors during discovery are translated into the provider-agnostic
+hierarchy: authentication failures become `ProviderCredentialsError`,
+permission failures become `ProviderPermissionsError`, and a missing or
+disabled subscription becomes `ProviderInvalidDateRangeError` (HTTP 400
+at the route layer).
+
+#### Cost Management Query API
+
+The provider queries the Azure Cost Management Query API with a `Usage`
+query grouped by `ServiceName`. The query shape is:
+
+* **Type:** `Usage`
+* **Timeframe:** `Custom` (using the caller-supplied `start_date` and
+  `end_date`)
+* **Granularity:** `Daily` or `Monthly` (capitalised for the API)
+* **Aggregation:** `totalCost` summed as `Cost`
+* **Grouping:** `Dimension` on `ServiceName`
+
+The query is executed against the scope
+`/subscriptions/{subscription_id}` and the response rows are normalised
+into `CostResponse` by `AzureMapper` (which mirrors the defensive
+defaults applied by `AWSMapper`: missing `date_range` or `services` are
+filled in from the request parameters so callers never have to
+special-case partial payloads).
+
+#### Registry registration
+
+`app/providers/azure/__init__.py` registers the Azure factory at import
+time:
+
+```python
+from app.providers.azure.mapper import AzureMapper
+from app.providers.azure.provider import AzureCloudProvider
+from app.providers.registry import register_provider
+
+register_provider("azure", lambda: AzureCloudProvider())
+```
+
+Because `app/providers/__init__.py` imports both the `aws` and `azure`
+sub-packages, both registrations run as a side-effect of importing the
+abstraction package. There is no extra wiring in the route layer —
+`Depends(get_provider("azure"))` resolves to a live `AzureCloudProvider`
+instance per request, exactly like the AWS equivalent.
+
+| Concern | Implementation |
+| ------- | -------------- |
+| Provider class | `app/providers/azure/provider.py` — `AzureCloudProvider` |
+| Mapper class | `app/providers/azure/mapper.py` — `AzureMapper` |
+| Underlying service | `app/services/azure/cost_management.py` — `AzureCostManagementService` |
+| Azure SDK packages | `azure-identity`, `azure-mgmt-costmanagement`, `azure-mgmt-subscription` |
+| Route | `GET /api/v1/azure/costs` (mounted in `app/api/router.py`) |
+| Registry key | `"azure"` |
 
 ### Provider-agnostic exceptions
 
@@ -329,7 +455,7 @@ except (AWSServiceError, ProviderServiceError) as e:
 Once the AWS service layer is fully retired, the AWS-specific `except`
 clauses can be removed and the route can drop the dual import.
 
-### Extension guide: adding Azure or GCP
+### Extension guide: adding GCP
 
 Adding a new cloud vendor is a four-step, additive change. Each step is
 localised to a new directory under `app/providers/` plus a single new
@@ -361,20 +487,20 @@ route file.
 
    ```python
    from app.providers.registry import register_provider
-   from app.providers.azure.provider import AzureCloudProvider
+   from app.providers.gcp.provider import GCPCloudProvider
 
-   register_provider("azure", lambda: AzureCloudProvider())
+   register_provider("gcp", lambda: GCPCloudProvider())
    ```
 
    Because `app/providers/__init__.py` re-exports the public API, the
-   Azure sub-package should be imported there (or its `__init__` should
+   GCP sub-package should be imported there (or its `__init__` should
    be picked up transitively) so registration runs at process start.
 
 4. **Add a route.** Create `app/api/routes/<name>.py` with a FastAPI
    router that resolves the implementation through the registry:
 
    ```python
-   provider: Annotated[CloudProvider, Depends(get_provider("azure"))]
+   provider: Annotated[CloudProvider, Depends(get_provider("gcp"))]
    ```
 
    Return `CostResponse` and catch each `ProviderError` subclass,
@@ -383,13 +509,23 @@ route file.
 
 ### Scope note
 
-This sprint delivers the **shared abstraction and the AWS refactor only**:
-the `CloudProvider` ABC, the `CostResponse` / `ServiceCost` schemas, the
-manual registry, the `ProviderError` hierarchy, `AWSCloudProvider`,
-`AWSMapper`, and the AWS route updated to consume the registry via
-`Depends`. Azure (`AzureCloudProvider`) and GCP (`GCPCloudProvider`)
-implementations are **intentionally out of scope** and will land in a
-later sprint following the extension guide above.
+This section is the cumulative record of what the cloud-provider
+abstraction has delivered across sprints:
+
+* **Sprint 0.5** delivered the shared abstraction and the AWS refactor:
+  the `CloudProvider` ABC, the `CostResponse` / `ServiceCost` schemas,
+  the manual registry, the `ProviderError` hierarchy,
+  `AWSCloudProvider`, `AWSMapper`, and the AWS route updated to consume
+  the registry via `Depends`.
+* **Sprint 0.6** added the Azure implementation on top of that
+  foundation: `AzureCloudProvider`, `AzureMapper`,
+  `AzureCostManagementService` (with `DefaultAzureCredential` and
+  service-principal support), the Azure-specific exception hierarchy in
+  `app/services/azure/exceptions.py`, the Azure request schema, the
+  `GET /api/v1/azure/costs` route, and the `"azure"` entry in the
+  registry.
+* **GCP** (`GCPCloudProvider`) remains the next vendor to land and will
+  follow the extension guide above in a later sprint.
 
 ---
 

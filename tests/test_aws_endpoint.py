@@ -7,11 +7,17 @@ factory instantiates) to drive the route without touching AWS.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 
+from app.api.routes.aws import aws_provider_dependency
+from app.auth.dependencies import get_current_active_user
+from app.auth.models import User
+from app.main import app
 from app.providers import CostResponse, ServiceCost
 from app.providers.exceptions import (
     ProviderCredentialsError,
@@ -27,6 +33,50 @@ def _build_mock_provider() -> MagicMock:
     mock_provider = MagicMock()
     mock_provider.provider_name.return_value = "aws"
     return mock_provider
+
+
+def _override_provider(mock_provider: MagicMock) -> None:
+    """Override the AWS provider dependency with an async test dependency."""
+
+    async def _provider() -> MagicMock:
+        return mock_provider
+
+    app.dependency_overrides[aws_provider_dependency] = _provider
+
+
+@pytest_asyncio.fixture
+async def auth_client() -> AsyncClient:
+    """Authenticated client with a benign AWS provider override."""
+
+    async def _current_user() -> User:
+        return User(
+            id=uuid4(),
+            email="aws-route-test@example.com",
+            full_name="AWS Route Test",
+            password_hash="unused",
+            is_active=True,
+        )
+
+    app.dependency_overrides[get_current_active_user] = _current_user
+    default_provider = _build_mock_provider()
+    default_provider.get_costs = AsyncMock(
+        return_value=CostResponse(
+            provider="aws",
+            currency="USD",
+            total_cost=0.0,
+            date_range={
+                "start": "2024-01-01",
+                "end": "2024-01-02",
+                "granularity": "DAILY",
+            },
+            services=[],
+        )
+    )
+    _override_provider(default_provider)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+    app.dependency_overrides.clear()
 
 
 class TestAWSEndpoint:
@@ -51,16 +101,16 @@ class TestAWSEndpoint:
         )
         mock_provider = _build_mock_provider()
         mock_provider.get_costs = AsyncMock(return_value=cost_response)
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                    "granularity": "DAILY",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+                "granularity": "DAILY",
+            },
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["provider"] == "aws"
@@ -118,15 +168,15 @@ class TestAWSEndpoint:
         mock_provider.get_costs = AsyncMock(
             side_effect=ProviderCredentialsError("No credentials")
         )
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+        )
         assert response.status_code == 500
 
     @pytest.mark.asyncio
@@ -136,15 +186,15 @@ class TestAWSEndpoint:
         mock_provider.get_costs = AsyncMock(
             side_effect=ProviderThrottlingError("Rate limited")
         )
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+        )
         assert response.status_code == 429
 
     @pytest.mark.asyncio
@@ -154,15 +204,15 @@ class TestAWSEndpoint:
         mock_provider.get_costs = AsyncMock(
             side_effect=ProviderPermissionsError("Access denied")
         )
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+        )
         assert response.status_code == 403
 
     @pytest.mark.asyncio
@@ -172,15 +222,15 @@ class TestAWSEndpoint:
         mock_provider.get_costs = AsyncMock(
             side_effect=ProviderInvalidDateRangeError("Bad range")
         )
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+        )
         assert response.status_code == 400
 
     @pytest.mark.asyncio
@@ -190,13 +240,13 @@ class TestAWSEndpoint:
         mock_provider.get_costs = AsyncMock(
             side_effect=ProviderServiceError("Service error")
         )
+        _override_provider(mock_provider)
 
-        with patch("app.providers.aws.AWSCloudProvider", return_value=mock_provider):
-            response = await auth_client.get(
-                "/api/v1/aws/costs",
-                params={
-                    "start_date": "2024-01-01",
-                    "end_date": "2024-01-02",
-                },
-            )
+        response = await auth_client.get(
+            "/api/v1/aws/costs",
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-01-02",
+            },
+        )
         assert response.status_code == 502

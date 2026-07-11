@@ -7,6 +7,7 @@ from datetime import date
 
 import pytest
 from fastapi import Depends, FastAPI
+from httpx import ASGITransport, AsyncClient
 
 from app.providers import (
     PROVIDER_REGISTRY,
@@ -18,6 +19,7 @@ from app.providers import (
     get_provider_factory,
     register_provider,
 )
+from app.providers.azure import AzureCloudProvider
 
 
 class FakeCloudProvider(CloudProvider):
@@ -83,7 +85,7 @@ class TestProviderRegistry:
             def validate_credentials(self) -> bool:
                 return False
 
-            def get_costs(  # pragma: no cover - unused in this test
+            async def get_costs(  # pragma: no cover - unused in this test
                 self,
                 start_date: date,
                 end_date: date,
@@ -117,6 +119,13 @@ class TestProviderRegistry:
         assert isinstance(provider, FakeCloudProvider)
         assert provider.provider_name() == "fake"
 
+    def test_azure_provider_is_registered(self) -> None:
+        """``app.providers.azure`` registers a factory for ``"azure"``."""
+        factory = get_provider_factory("azure")
+        provider = factory()
+        assert isinstance(provider, AzureCloudProvider)
+        assert provider.provider_name() == "azure"
+
 
 class TestGetProviderDependency:
     def test_get_provider_returns_zero_arg_callable(self, registered_fake: str) -> None:
@@ -131,22 +140,25 @@ class TestGetProviderDependency:
         with pytest.raises(ProviderError):
             get_provider("missing")
 
-    def test_get_provider_works_as_fastapi_dependency(
+    @pytest.mark.asyncio
+    async def test_get_provider_works_as_fastapi_dependency(
         self, registered_fake: str
     ) -> None:
         """The returned factory works end-to-end as a FastAPI ``Depends`` dependency."""
         factory = get_provider(registered_fake)
         app = FastAPI()
 
+        async def provider_dependency() -> CloudProvider:
+            return factory()
+
         @app.get("/provider-name")
-        def read_provider_name(
-            provider: CloudProvider = Depends(factory),  # noqa: B008
+        async def read_provider_name(
+            provider: CloudProvider = Depends(provider_dependency),  # noqa: B008
         ) -> str:
             return provider.provider_name()
 
-        from fastapi.testclient import TestClient
-
-        client = TestClient(app)
-        response = client.get("/provider-name")
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/provider-name")
         assert response.status_code == 200
         assert response.json() == "fake"

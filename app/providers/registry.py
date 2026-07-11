@@ -55,3 +55,8 @@ def get_provider(name: str) -> Callable[[], CloudProvider]:
     no factory is registered under ``name``.
     """
     return get_provider_factory(name)
+
+
+def list_providers() -> list[str]:
+    """Return the names of all registered cloud-provider factories."""
+    return list(PROVIDER_REGISTRY.keys())
