@@ -329,9 +329,6 @@ Azure SDK credential from the configured settings:
   and uses the first that succeeds:
   * **Managed Identity** — for workloads running inside Azure (App
     Service, Functions, AKS, VMs with the managed-identity extension).
-    When `AZURE_CLIENT_ID` is also set it is passed as
-    `managed_identity_client_id` so a user-assigned identity is picked
-    up rather than the system-assigned default.
   * **Azure CLI** — the developer's `az login` session, used in local
     development. No environment variables are required.
   * **Environment variables** — service-principal credentials supplied

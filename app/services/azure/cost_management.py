@@ -42,6 +42,7 @@ class AzureCostManagementService:
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._timeout: int | None = settings.azure_request_timeout
         self._credential: Any | None = None
         self._cost_client: CostManagementClient | None = None
         self._subscription_client: SubscriptionClient | None = None
@@ -82,7 +83,9 @@ class AzureCostManagementService:
             credential = self._ensure_credential()
             if self._subscription_client is None:
                 self._subscription_client = SubscriptionClient(credential)
-            for subscription in self._subscription_client.subscriptions.list():
+            for subscription in self._subscription_client.subscriptions.list(
+                timeout=self._timeout
+            ):
                 if getattr(subscription, "state", None) == "Enabled":
                     return str(subscription.subscription_id)
         except ClientAuthenticationError as e:
@@ -191,7 +194,7 @@ class AzureCostManagementService:
             credential = self._ensure_credential()
             if self._cost_client is None:
                 self._cost_client = CostManagementClient(credential)
-            result = self._cost_client.query.usage(scope, query)
+            result = self._cost_client.query.usage(scope, query, timeout=self._timeout)
         except ClientAuthenticationError as e:
             logger.error("azure_credentials_missing", extra={"error": str(e)})
             raise AzureCredentialsError("Azure credentials not found or invalid") from e

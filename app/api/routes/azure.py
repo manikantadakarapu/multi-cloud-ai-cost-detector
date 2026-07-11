@@ -27,10 +27,18 @@ from app.providers.exceptions import (
 )
 from app.providers.schemas import CostResponse
 from app.schemas.azure import AzureCostRequest
+from app.services.azure.exceptions import (
+    AzureCredentialsError,
+    AzureInvalidSubscriptionError,
+    AzurePermissionsError,
+    AzureServiceError,
+    AzureThrottlingError,
+)
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/azure", tags=["azure"])
+azure_provider_dependency = get_provider("azure")
 
 
 @router.get(
@@ -56,7 +64,7 @@ router = APIRouter(prefix="/azure", tags=["azure"])
 async def get_azure_costs(
     request: Annotated[AzureCostRequest, Query()],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    provider: Annotated[CloudProvider, Depends(get_provider("azure"))],
+    provider: Annotated[CloudProvider, Depends(azure_provider_dependency)],
 ) -> CostResponse:
     """Retrieve Azure costs grouped by service via the provider abstraction."""
     logger.info(
@@ -83,31 +91,31 @@ async def get_azure_costs(
             },
         )
         return result
-    except ProviderInvalidDateRangeError as e:
+    except (AzureInvalidSubscriptionError, ProviderInvalidDateRangeError) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except ProviderCredentialsError as e:
+    except (AzureCredentialsError, ProviderCredentialsError) as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except ProviderThrottlingError as e:
+    except (AzureThrottlingError, ProviderThrottlingError) as e:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except ProviderPermissionsError as e:
+    except (AzurePermissionsError, ProviderPermissionsError) as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=e.message,
             headers={"X-Error-Code": e.error_code},
         ) from e
-    except ProviderServiceError as e:
+    except (AzureServiceError, ProviderServiceError) as e:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=e.message,

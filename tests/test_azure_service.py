@@ -31,6 +31,7 @@ def _make_settings(**overrides: Any) -> Settings:
         "AZURE_TENANT_ID": None,
         "AZURE_CLIENT_ID": None,
         "AZURE_CLIENT_SECRET": None,
+        "AZURE_REQUEST_TIMEOUT": 30,
     }
     base.update(overrides)
     return Settings(**base)
@@ -435,6 +436,81 @@ class TestAzureCostManagementService:
             tenant_id="tenant", client_id="client", client_secret="secret"
         )
         mock_dac.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_default_timeout_passed_to_client_calls(
+        self, service: AzureCostManagementService
+    ) -> None:
+        query_result = _query_result(rows=[["Storage", 10.0]])
+
+        with patch.object(
+            cost_management_module, "CostManagementClient"
+        ) as mock_cost_client:
+            mock_cost_client.return_value.query.usage.return_value = query_result
+
+            await service.get_costs(
+                start_date=date(2024, 1, 1),
+                end_date=date(2024, 1, 31),
+                granularity="DAILY",
+            )
+
+        call_kwargs = mock_cost_client.return_value.query.usage.call_args.kwargs
+        assert call_kwargs.get("timeout") == 30
+
+    @pytest.mark.asyncio
+    async def test_custom_timeout_passed_to_client_calls(
+        self,
+    ) -> None:
+        settings = _make_settings(AZURE_REQUEST_TIMEOUT=60)
+        svc = AzureCostManagementService(settings)
+        query_result = _query_result(rows=[["Storage", 10.0]])
+
+        with patch.object(
+            cost_management_module, "CostManagementClient"
+        ) as mock_cost_client:
+            mock_cost_client.return_value.query.usage.return_value = query_result
+
+            await svc.get_costs(
+                start_date=date(2024, 1, 1),
+                end_date=date(2024, 1, 31),
+                granularity="DAILY",
+            )
+
+        call_kwargs = mock_cost_client.return_value.query.usage.call_args.kwargs
+        assert call_kwargs.get("timeout") == 60
+
+    @pytest.mark.asyncio
+    async def test_timeout_passed_to_subscription_list(self) -> None:
+        settings = _make_settings(AZURE_SUBSCRIPTION_ID=None, AZURE_REQUEST_TIMEOUT=45)
+        svc = AzureCostManagementService(settings)
+        query_result = _query_result(rows=[["Storage", 10.0]])
+
+        with (
+            patch.object(
+                cost_management_module, "SubscriptionClient"
+            ) as mock_sub_client,
+            patch.object(
+                cost_management_module, "CostManagementClient"
+            ) as mock_cost_client,
+        ):
+            enabled = MagicMock()
+            enabled.state = "Enabled"
+            enabled.subscription_id = "22222222-2222-2222-2222-222222222222"
+            mock_sub_client.return_value.subscriptions.list.return_value = [enabled]
+            mock_cost_client.return_value.query.usage.return_value = query_result
+
+            await svc.get_costs(
+                start_date=date(2024, 1, 1),
+                end_date=date(2024, 1, 31),
+                granularity="DAILY",
+            )
+
+        sub_call_kwargs = (
+            mock_sub_client.return_value.subscriptions.list.call_args.kwargs
+        )
+        assert sub_call_kwargs.get("timeout") == 45
+        cost_call_kwargs = mock_cost_client.return_value.query.usage.call_args.kwargs
+        assert cost_call_kwargs.get("timeout") == 45
 
     @pytest.mark.asyncio
     async def test_empty_query_result_returns_zero_total(

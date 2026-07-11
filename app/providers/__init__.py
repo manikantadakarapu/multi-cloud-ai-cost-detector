@@ -32,6 +32,7 @@ from app.providers.registry import (
     PROVIDER_REGISTRY,
     get_provider,
     get_provider_factory,
+    list_providers,
     register_provider,
 )
 from app.providers.schemas import CostResponse, ServiceCost
@@ -50,4 +51,5 @@ __all__ = [
     "register_provider",
     "get_provider",
     "get_provider_factory",
+    "list_providers",
 ]

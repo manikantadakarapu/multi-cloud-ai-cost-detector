@@ -91,6 +91,8 @@ class AzureCloudProvider(CloudProvider):
             raise ProviderInvalidDateRangeError(str(e.message)) from e
         except AzureServiceError as e:
             raise ProviderServiceError(str(e.message)) from e
+        except ClientAuthenticationError as e:
+            raise ProviderCredentialsError(str(e)) from e
         except AzureError as e:
             raise ProviderServiceError(f"Azure service error: {e}") from e
 

@@ -36,6 +36,7 @@ from app.services.aws.exceptions import (
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/aws", tags=["aws"])
+aws_provider_dependency = get_provider("aws")
 
 
 @router.get(
@@ -61,7 +62,7 @@ router = APIRouter(prefix="/aws", tags=["aws"])
 async def get_aws_costs(
     request: Annotated[AWSCostRequest, Query()],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    provider: Annotated[CloudProvider, Depends(get_provider("aws"))],
+    provider: Annotated[CloudProvider, Depends(aws_provider_dependency)],
 ) -> CostResponse:
     """Retrieve AWS costs grouped by service via the provider abstraction."""
     logger.info(

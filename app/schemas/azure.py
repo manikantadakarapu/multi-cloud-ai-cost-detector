@@ -13,9 +13,21 @@ class AzureCostRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    start_date: date = Field(...)
-    end_date: date = Field(...)
-    granularity: Literal["DAILY", "MONTHLY"] = Field(default="DAILY")
+    start_date: date = Field(
+        ...,
+        description="Start date for cost retrieval (inclusive).",
+        examples=["2024-01-01"],
+    )
+    end_date: date = Field(
+        ...,
+        description="End date for cost retrieval (inclusive).",
+        examples=["2024-01-31"],
+    )
+    granularity: Literal["DAILY", "MONTHLY"] = Field(
+        default="DAILY",
+        description="Granularity of cost data.",
+        examples=["DAILY"],
+    )
 
     @field_validator("end_date")
     @classmethod

@@ -374,8 +374,8 @@ for the subscription scope. The built-in roles below are sufficient:
 | `AZURE_TENANT_ID` | Azure AD tenant GUID. Required for `ClientSecretCredential` fallback. | — | No* |
 | `AZURE_CLIENT_ID` | Service principal application (client) ID. Required for `ClientSecretCredential` fallback. | — | No* |
 | `AZURE_CLIENT_SECRET` | Service principal client secret. Required for `ClientSecretCredential` fallback. | — | No* |
-| `AZURE_REQUEST_TIMEOUT` | Timeout in seconds for Azure Cost Management and subscription API calls. | `60` | No |
 | `AZURE_COST_MANAGEMENT_ENABLED` | Enable or disable the Azure Cost Management integration. | `true` | No |
+| `AZURE_REQUEST_TIMEOUT` | Timeout in seconds for Azure Cost Management and subscription API calls. | `30` | No |
 
 *Required only when explicitly using `ClientSecretCredential` instead of
 `DefaultAzureCredential`.

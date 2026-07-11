@@ -134,6 +134,11 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="AZURE_CLIENT_SECRET",
     )
+    azure_request_timeout: int | None = Field(
+        default=30,
+        ge=1,
+        validation_alias="AZURE_REQUEST_TIMEOUT",
+    )
 
     @computed_field
     @property

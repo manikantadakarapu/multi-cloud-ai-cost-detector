@@ -10,7 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No changes yet._
+### Added
+
+- Sprint 0.6 Azure Cost Management integration:
+  - Azure Cost Management Query API integration
+    (`app/services/azure/cost_management.py`) using `azure-identity` and
+    `azure-mgmt-costmanagement` with `DefaultAzureCredential` and optional
+    `ClientSecretCredential`, subscription scope, and date-range validation.
+  - `GET /api/v1/azure/costs` endpoint (`app/api/routes/azure.py`) mounted
+    under the v1 API router and protected by the existing
+    `get_current_active_user` JWT dependency.
+  - Normalised `CostResponse` output (`app/schemas/azure.py`) matching the
+    AWS cost-response shape, with provider, currency, total cost,
+    date range, and service-level breakdown.
+  - Azure-specific exception hierarchy (`app/services/azure/exceptions.py`):
+    `AzureCostManagementError` (base) and `AzureCredentialsError`,
+    `AzureThrottlingError`, `AzurePermissionsError`,
+    `AzureInvalidSubscriptionError`, and `AzureServiceError`, each carrying
+    a stable `error_code`.
+  - Provider-level tests, registry tests, mapper tests, and route error
+    tests for Azure Cost Management.
+  - Documentation updates in `README.md` and `.env.example` covering Azure
+    authentication, required environment variables, the new endpoint, and
+    example requests and responses.
 
 ---
 
