@@ -20,18 +20,21 @@ from app.core.logging import configure_logging, get_logger
 from app.core.openapi import configure_openapi
 from app.core.rate_limit import configure_rate_limiting
 from app.database.session import dispose_engine
+from app.providers import list_providers
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     logger = get_logger(__name__)
+    registered_providers = list_providers()
     logger.info(
         "application_starting",
         extra={
             "app_name": settings.app_name,
             "app_env": settings.app_env,
             "app_version": settings.app_version,
+            "registered_providers": registered_providers,
         },
     )
     try:

@@ -17,10 +17,11 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 0.7 — Provider-independent aggregation, Redis caching,
-> and rate limiting are in progress. Backend foundation (Sprint 0.1),
-> engineering documentation (Sprint 0.2), JWT auth (Sprint 0.3), and cloud
-> providers (Sprints 0.4–0.6) are complete.
+> **Status:** Sprint 0.9 — Provider-independent cost aggregation complete.
+> Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
+> JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
+> aggregation (Sprint 0.7), and Redis caching/rate limiting (Sprint 0.8)
+> are complete.
 
 ## Table of Contents
 
@@ -114,11 +115,11 @@ MCAICD/
 | 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
 | 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
 | 0.3 | 🟡 In progress | Authentication — local JWT foundation (register, login, refresh, logout, `/me`) complete. Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control planned. |
-| 0.4 | 🟡 In progress | Cloud integrations — AWS Cost Explorer complete (auth, service, endpoint, tests). Azure Cost Management and GCP Billing export planned. Unified normalised schema in progress. |
+| 0.4 | ✅ Complete | Cloud integrations — AWS Cost Explorer, Azure Cost Management, GCP Billing export complete (auth, service, endpoint, tests). Unified normalised schema implemented. |
 | 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
 | 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
-| 0.7 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
-| 0.8 | ⏳ Planned | Real-time monitoring — WebSocket anomaly push, alerting rules, notification channels. |
+| 0.7 | ✅ Complete | Provider-independent cost aggregation — unified `/api/v1/costs` endpoint with provider dispatch, shared `CostResponse` schema, provider registry with `ProviderNotSupportedException`, and full test coverage. |
+| 0.8 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
 | 1.0 | 🔭 Future | Production release — hardening, load testing, security audit, GA.
 
@@ -193,6 +194,7 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/auth/me        | Current authenticated user profile          |
 | http://localhost:8000/api/v1/aws/costs       | Retrieve AWS costs grouped by service (requires AWS credentials) |
 | http://localhost:8000/api/v1/azure/costs     | Retrieve Azure costs grouped by service (requires Azure credentials) |
+| http://localhost:8000/api/v1/costs           | Unified endpoint — retrieve costs from any provider (aws, azure, gcp) |
 
 ---
 
@@ -443,6 +445,80 @@ curl -H "Authorization: Bearer <token>" \
 
 The error code is also returned in the `X-Error-Code` response header for
 machine-readable handling.
+
+---
+
+## Unified Multi-Cloud Cost API
+
+The unified cost endpoint provides a single entry point to retrieve cost data
+from any registered cloud provider (AWS, Azure, GCP). Instead of calling
+provider-specific routes, clients specify the provider as a query parameter.
+This is ideal for dashboards that need to query multiple clouds through one
+API surface.
+
+### API Endpoint
+
+**GET** `/api/v1/costs`
+
+Retrieve costs from any registered cloud provider.
+
+**Authentication:** JWT Bearer token required.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `provider` | string | Yes | — | Cloud provider to query: `aws`, `azure`, or `gcp`. |
+| `start_date` | date | Yes | — | Start date (inclusive), ISO `YYYY-MM-DD`. |
+| `end_date` | date | Yes | — | End date (inclusive), ISO `YYYY-MM-DD`. Must be on or after `start_date`. |
+| `granularity` | string | No | `DAILY` | `DAILY` or `MONTHLY`. |
+
+**Example Request:**
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/v1/costs?provider=aws&start_date=2024-01-01&end_date=2024-01-31&granularity=MONTHLY"
+```
+
+**Example Response:**
+
+```json
+{
+  "provider": "aws",
+  "currency": "USD",
+  "total_cost": 150.75,
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2024-01-31",
+    "granularity": "MONTHLY"
+  },
+  "services": [
+    {"service_name": "AmazonEC2", "cost": 100.50},
+    {"service_name": "AmazonS3", "cost": 50.25}
+  ]
+}
+```
+
+**Error Responses:**
+
+| Status | Error Code | Description |
+|--------|------------|-------------|
+| 400 | `PROVIDER_NOT_SUPPORTED` | Unknown or unsupported provider name. |
+| 400 | `PROVIDER_INVALID_DATE_RANGE` | Invalid date range or parameters. |
+| 401 | — | Missing or invalid JWT. |
+| 403 | `PROVIDER_PERMISSIONS_ERROR` | Provider credentials lack required permissions. |
+| 422 | — | Request validation error (e.g. unknown granularity or provider). |
+| 429 | `PROVIDER_THROTTLING_ERROR` | Provider API rate-limiting. |
+| 500 | `PROVIDER_CREDENTIALS_ERROR` | Provider credentials missing or invalid. |
+| 502 | `PROVIDER_SERVICE_ERROR` | Upstream provider service error. |
+
+The error code is also returned in the `X-Error-Code` response header for
+machine-readable handling.
+
+**Note:** The per-provider endpoints (`/api/v1/aws/costs`, `/api/v1/azure/costs`,
+`/api/v1/gcp/costs`) remain available and unchanged. The unified endpoint
+simply provides an alternative single-route pattern for clients that prefer
+dispatching by query parameter.
 
 ---
 
