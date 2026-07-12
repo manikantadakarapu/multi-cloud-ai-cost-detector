@@ -27,8 +27,8 @@ from app.providers.gcp.mapper import GCPMapper
 from app.providers.schemas import CostResponse
 from app.services.gcp.billing import GCPBillingService
 from app.services.gcp.exceptions import (
-    GCPBillingAccountNotFoundError,
     GCPBigQueryError,
+    GCPBillingAccountNotFoundError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )

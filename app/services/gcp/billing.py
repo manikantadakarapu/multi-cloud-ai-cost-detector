@@ -25,13 +25,14 @@ from google.api_core.exceptions import (
 from google.auth.exceptions import DefaultCredentialsError, RefreshError
 from google.cloud import bigquery
 from google.cloud.bigquery import Client as BigQueryClient
+from google.cloud.bigquery import QueryJobConfig, ScalarQueryParameter
 from google.oauth2 import service_account
 
 from app.core.config import Settings
 from app.services.gcp.exceptions import (
+    GCPBigQueryError,
     GCPBillingAccountNotFoundError,
     GCPBillingError,
-    GCPBigQueryError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )
@@ -140,7 +141,7 @@ class GCPBillingService:
         start_date: date,
         end_date: date,
         granularity: str,
-    ) -> str:
+    ) -> tuple[str, list[ScalarQueryParameter]]:
         """Build the SQL aggregation against the billing export table.
 
         The standard GCP billing export table exposes ``service.description``
@@ -148,29 +149,40 @@ class GCPBillingService:
         line-item cost. We aggregate per service for the requested period
         and order by descending cost so the mapper receives pre-sorted
         output.
+
+        Date values are bound as BigQuery scalar parameters so they
+        cannot be interpreted as SQL. The table identifier cannot be
+        parameterised (BigQuery limitation) and is operator-controlled
+        via :class:`Settings` rather than user input.
         """
         table = self._qualified_table()
-        date_filter = (
-            f"DATE(usage_start_time) >= DATE('{start_date.isoformat()}') "
-            f"AND DATE(usage_start_time) <= DATE('{end_date.isoformat()}')"
-        )
+        params = [
+            ScalarQueryParameter("start_date", "DATE", start_date.isoformat()),
+            ScalarQueryParameter("end_date", "DATE", end_date.isoformat()),
+        ]
         return (
-            f"SELECT service.description AS service_name, "
-            f"SUM(cost) AS total_cost, "
-            f"ANY_VALUE(currency) AS currency "
-            f"FROM {table} "
-            f"WHERE {date_filter} "
-            f"GROUP BY service_name "
-            f"ORDER BY total_cost DESC"
-        )
+            "SELECT service.description AS service_name, "
+            "SUM(cost) AS total_cost, "
+            "ANY_VALUE(currency) AS currency "
+            f"FROM {table} "  # nosec B608 — operator-configured table id, not user input
+            "WHERE DATE(usage_start_time) >= @start_date "
+            "AND DATE(usage_start_time) <= @end_date "
+            "GROUP BY service_name "
+            "ORDER BY total_cost DESC"
+        ), params
 
     # -- Query execution ------------------------------------------------------
 
-    def _execute_query(self, query: str) -> list[dict[str, Any]]:
-        """Execute ``query`` and return the result rows as dicts."""
+    def _execute_query(
+        self,
+        sql: str,
+        params: list[ScalarQueryParameter],
+    ) -> list[dict[str, Any]]:
+        """Execute ``sql`` with ``params`` and return the result rows as dicts."""
         client = self._ensure_client()
         try:
-            job = client.query(query)
+            job_config = QueryJobConfig(query_parameters=params)
+            job = client.query(sql, job_config=job_config)
             rows = list(job.result())
         except TooManyRequests as e:
             logger.error("gcp_bigquery_quota_exceeded", extra={"error": str(e)})
@@ -293,7 +305,7 @@ class GCPBillingService:
         self._validate_config()
         self._validate_date_range(start_date, end_date)
 
-        query = self._build_query(start_date, end_date, granularity)
+        sql, params = self._build_query(start_date, end_date, granularity)
         logger.info(
             "gcp_billing_request",
             extra={
@@ -305,7 +317,7 @@ class GCPBillingService:
 
         start_time = time.perf_counter()
         try:
-            rows = self._execute_query(query)
+            rows = self._execute_query(sql, params)
         except GCPBillingError:
             # All GCP-specific errors are already correctly typed by
             # ``_execute_query``; let them propagate untouched so callers

@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 
 from app.services.gcp.exceptions import (
+    GCPBigQueryError,
     GCPBillingAccountNotFoundError,
     GCPBillingError,
-    GCPBigQueryError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )

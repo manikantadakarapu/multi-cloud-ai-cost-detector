@@ -18,8 +18,8 @@ from app.providers.exceptions import (
 )
 from app.providers.gcp import GCPCloudProvider, GCPMapper
 from app.services.gcp.exceptions import (
-    GCPBillingAccountNotFoundError,
     GCPBigQueryError,
+    GCPBillingAccountNotFoundError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )

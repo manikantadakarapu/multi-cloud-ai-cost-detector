@@ -20,8 +20,8 @@ from app.core.config import Settings
 from app.services.gcp import billing as billing_module
 from app.services.gcp.billing import GCPBillingService
 from app.services.gcp.exceptions import (
-    GCPBillingAccountNotFoundError,
     GCPBigQueryError,
+    GCPBillingAccountNotFoundError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )
@@ -190,12 +190,29 @@ class TestGCPBillingService:
             "granularity": "DAILY",
         }
 
-        # SQL should be well-formed and reference the configured table.
+        # SQL should be well-formed, reference the configured table, and
+        # use parameter placeholders so user-controlled values cannot be
+        # interpreted as SQL.
         query = mock_client.query.call_args.args[0]
         assert "`billing-project.billing_dataset.gcp_billing_export_v1`" in query
         assert "service.description AS service_name" in query
         assert "SUM(cost)" in query
         assert "GROUP BY service_name" in query
+        assert "@start_date" in query
+        assert "@end_date" in query
+        assert "2024-01-01" not in query
+        assert "2024-01-31" not in query
+
+        # Date values must be bound via QueryJobConfig.query_parameters,
+        # not interpolated into the SQL string.
+        job_config = mock_client.query.call_args.kwargs["job_config"]
+        param_names = [p.name for p in job_config.query_parameters]
+        assert param_names == ["start_date", "end_date"]
+        param_values = [p.value for p in job_config.query_parameters]
+        assert [(v.isoformat() if hasattr(v, "isoformat") else v) for v in param_values] == [
+            "2024-01-01",
+            "2024-01-31",
+        ]
 
     @pytest.mark.asyncio
     async def test_quota_exceeded_translates(self, service: GCPBillingService) -> None:
