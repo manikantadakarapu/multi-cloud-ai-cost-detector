@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from app.providers.base import CloudProvider
-from app.providers.exceptions import ProviderError
+from app.providers.exceptions import ProviderError, ProviderNotSupportedException
 
 PROVIDER_REGISTRY: dict[str, Callable[[], CloudProvider]] = {}
 
@@ -40,6 +40,22 @@ def get_provider_factory(name: str) -> Callable[[], CloudProvider]:
             error_code="PROVIDER_NOT_REGISTERED",
         )
     return factory
+
+
+def resolve_provider(name: str) -> CloudProvider:
+    """Resolve ``name`` to a fresh :class:`CloudProvider` instance.
+
+    This is the high-level resolver used by the unified cost API. It
+    validates that a factory is registered for ``name`` and returns a
+    new provider instance. Unknown names raise
+    :class:`ProviderNotSupportedException`, a subclass of
+    :class:`ProviderError`, so callers can either catch the specific
+    unsupported case or the broader provider-error umbrella.
+    """
+    factory = PROVIDER_REGISTRY.get(name)
+    if factory is None:
+        raise ProviderNotSupportedException(name=name)
+    return factory()
 
 
 def get_provider(name: str) -> Callable[[], CloudProvider]:

@@ -56,3 +56,25 @@ class ProviderServiceError(ProviderError):
 
     def __init__(self, message: str = "Cloud provider service error") -> None:
         super().__init__(message, error_code="PROVIDER_SERVICE_ERROR")
+
+
+class ProviderNotSupportedException(ProviderError):
+    """Raised when a requested cloud provider is not registered.
+
+    This is a more specific subclass of :class:`ProviderError` used by
+    the resolver for the case where the provider name itself is
+    unrecognised (as opposed to a runtime error from a registered
+    provider). The unified cost API surfaces this via a
+    ``400 Bad Request`` response. Existing code that catches the
+    broader :class:`ProviderError` continues to work unchanged.
+    """
+
+    def __init__(
+        self,
+        message: str = "Cloud provider not supported",
+        name: str | None = None,
+    ) -> None:
+        if name is not None and message == "Cloud provider not supported":
+            message = f"Cloud provider '{name}' is not supported"
+        super().__init__(message, error_code="PROVIDER_NOT_SUPPORTED")
+        self.name = name
