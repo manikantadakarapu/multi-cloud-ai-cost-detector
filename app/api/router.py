@@ -11,6 +11,7 @@ from fastapi import APIRouter
 
 from app.api.routes.aws import router as aws_router
 from app.api.routes.azure import router as azure_router
+from app.api.routes.gcp import router as gcp_router
 from app.api.routes.health import router as health_router
 from app.auth.router import router as auth_router
 
@@ -18,4 +19,5 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health_router, tags=["health"])
 api_router.include_router(aws_router)
 api_router.include_router(azure_router)
+api_router.include_router(gcp_router)
 api_router.include_router(auth_router)
