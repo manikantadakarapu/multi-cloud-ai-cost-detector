@@ -10,12 +10,13 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.auth.dependencies import get_current_active_user
 from app.auth.models import User
 from app.core.logging import get_logger
-from app.providers import CloudProvider, get_provider
+from app.core.rate_limit import enforce_cost_rate_limit
+from app.providers import get_provider
 from app.providers.exceptions import (
     ProviderCredentialsError,
     ProviderInvalidDateRangeError,
@@ -32,11 +33,13 @@ from app.services.aws.exceptions import (
     AWSServiceError,
     AWSThrottlingError,
 )
+from app.services.cost_aggregator import CostAggregatorService, get_cost_aggregator
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/aws", tags=["aws"])
 aws_provider_dependency = get_provider("aws")
+aws_cost_aggregator_dependency = get_cost_aggregator("aws", aws_provider_dependency)
 
 
 @router.get(
@@ -59,27 +62,32 @@ aws_provider_dependency = get_provider("aws")
         502: {"description": "AWS service error."},
     },
 )
+@enforce_cost_rate_limit
 async def get_aws_costs(
-    request: Annotated[AWSCostRequest, Query()],
+    request: Request,
+    query: Annotated[AWSCostRequest, Query()],
     current_user: Annotated[User, Depends(get_current_active_user)],
-    provider: Annotated[CloudProvider, Depends(aws_provider_dependency)],
+    aggregator: Annotated[
+        CostAggregatorService,
+        Depends(aws_cost_aggregator_dependency),
+    ],
 ) -> CostResponse:
     """Retrieve AWS costs grouped by service via the provider abstraction."""
     logger.info(
         "aws_costs_request",
         extra={
             "user_id": str(current_user.id),
-            "start_date": request.start_date.isoformat(),
-            "end_date": request.end_date.isoformat(),
-            "granularity": request.granularity,
+            "start_date": query.start_date.isoformat(),
+            "end_date": query.end_date.isoformat(),
+            "granularity": query.granularity,
         },
     )
 
     try:
-        result = await provider.get_costs(
-            start_date=request.start_date,
-            end_date=request.end_date,
-            granularity=request.granularity,
+        result = await aggregator.get_costs(
+            start_date=query.start_date,
+            end_date=query.end_date,
+            granularity=query.granularity,
         )
         logger.info(
             "aws_costs_response",

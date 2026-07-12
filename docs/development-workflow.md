@@ -189,7 +189,9 @@ graph TD
 3. **Implement.** Keep routes thin; put logic in `app/services/`. Add models
    to `app/models/` and schemas to `app/schemas/`.
 4. **Write tests.** At minimum: one happy-path test and one error-path test
-   per endpoint or service method.
+   per endpoint or service method. For infrastructure-heavy features like
+   Redis caching and rate limiting, mock the external dependency and keep the
+   tests fully local.
 5. **Run the quality gate locally:**
    ```bash
    ruff check .
@@ -389,9 +391,9 @@ pip install -e ".[dev]"
 
 # Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL to match your PostgreSQL credentials
+# The example .env matches the Compose PostgreSQL and Redis defaults
 
-# Start PostgreSQL
+# Start PostgreSQL and Redis
 docker compose up -d
 
 # Run migrations
@@ -418,15 +420,16 @@ the README for the full list. The single most important variable is
 
 ### Current state
 
-Docker Compose provisions a local PostgreSQL 16 instance only. The FastAPI
-application itself is not yet containerised (planned for Sprint 0.9).
+Docker Compose provisions local PostgreSQL 16 and Redis 7 instances. The
+FastAPI application itself is not yet containerised (planned for Sprint 0.9).
 
 ```bash
-docker compose up -d           # Start PostgreSQL
-docker compose down            # Stop PostgreSQL
-docker compose down -v         # Stop and delete the data volume
+docker compose up -d           # Start PostgreSQL and Redis
+docker compose down            # Stop local infrastructure
+docker compose down -v         # Stop and delete local data volumes
 docker compose ps              # Check container status
 docker compose logs postgres   # View PostgreSQL logs
+docker compose logs redis      # View Redis logs
 ```
 
 The `docker-compose.yml` defines:
@@ -435,6 +438,8 @@ The `docker-compose.yml` defines:
 - A named volume (`postgres-mcaicd-data`) for data persistence.
 - Configurable credentials via `POSTGRES_USER` / `POSTGRES_PASSWORD` /
   `POSTGRES_DB` environment variables.
+- A `redis:7-alpine` service with a `redis-cli ping` healthcheck and named
+  volume (`redis-mcaicd-data`) for cache persistence.
 
 > **Important:** `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` are
 > only honoured the **first** time the data volume is initialised. Changing

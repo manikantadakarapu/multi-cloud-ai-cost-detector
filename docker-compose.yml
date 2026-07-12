@@ -9,20 +9,37 @@ services:
     # either (a) drop the volume and recreate the container, or
     # (b) run `ALTER USER ... WITH PASSWORD '...'` inside psql.
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-testuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-testuser123}
-      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+      POSTGRES_USER: ${POSTGRES_USER:-mcaicd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mcaicd}
+      POSTGRES_DB: ${POSTGRES_DB:-mcaicd}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-mcaicd-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-testuser} -d ${POSTGRES_DB:-testdb}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mcaicd} -d ${POSTGRES_DB:-mcaicd}"]
       interval: 5s
       timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-mcaicd
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-mcaicd-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 10
     restart: unless-stopped
 
 volumes:
   postgres-mcaicd-data:
     name: postgres-mcaicd-data
+  redis-mcaicd-data:
+    name: redis-mcaicd-data

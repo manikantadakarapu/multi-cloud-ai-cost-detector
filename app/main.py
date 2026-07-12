@@ -14,9 +14,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.api.routes.root import router as root_router
+from app.core.cache import shutdown_cache, startup_cache
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 from app.core.openapi import configure_openapi
+from app.core.rate_limit import configure_rate_limiting
 from app.database.session import dispose_engine
 
 
@@ -33,8 +35,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         },
     )
     try:
+        await startup_cache()
         yield
     finally:
+        await shutdown_cache()
         await dispose_engine()
         logger.info("application_stopped")
 
@@ -59,6 +63,7 @@ def create_app() -> FastAPI:
 
     application.include_router(root_router)
     application.include_router(api_router)
+    configure_rate_limiting(application)
     configure_openapi(application)
     return application
 

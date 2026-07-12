@@ -15,7 +15,10 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from app.api.routes.azure import azure_provider_dependency
+from app.api.routes.azure import (
+    azure_cost_aggregator_dependency,
+    azure_provider_dependency,
+)
 from app.auth.dependencies import get_current_active_user
 from app.auth.models import User
 from app.main import app
@@ -34,6 +37,7 @@ from app.services.azure.exceptions import (
     AzureServiceError,
     AzureThrottlingError,
 )
+from app.services.cost_aggregator import CostAggregatorService
 
 
 @pytest_asyncio.fixture
@@ -93,12 +97,16 @@ def _build_mock_provider() -> MagicMock:
 
 
 def _override_provider(mock_provider: MagicMock) -> None:
-    """Override the Azure provider dependency with an async test dependency."""
+    """Override the Azure provider and aggregation dependencies for the route."""
 
     async def _provider() -> MagicMock:
         return mock_provider
 
+    async def _aggregator() -> CostAggregatorService:
+        return CostAggregatorService("azure", mock_provider, cache=None)
+
     app.dependency_overrides[azure_provider_dependency] = _provider
+    app.dependency_overrides[azure_cost_aggregator_dependency] = _aggregator
 
 
 class TestAzureEndpoint:

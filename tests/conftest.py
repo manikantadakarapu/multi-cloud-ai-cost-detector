@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_db_session
 from app.auth.models import User
+from app.core.rate_limit import reset_rate_limits
 from app.main import app
 
 # ---------------------------------------------------------------------------
@@ -104,6 +105,14 @@ class _FakeAsyncSession:
 async def db_session() -> AsyncIterator[_FakeAsyncSession]:
     """Yield a request-scoped fake auth session."""
     yield _FakeAsyncSession(_FakeAuthStore())
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_rate_limit_state() -> AsyncIterator[None]:
+    """Reset in-memory rate limiting between tests."""
+    reset_rate_limits()
+    yield
+    reset_rate_limits()
 
 
 # ---------------------------------------------------------------------------

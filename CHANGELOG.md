@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 0.7 provider-independent cost aggregation:
+  - Redis-backed normalized cost-response cache with configurable
+    `REDIS_URL` and `CACHE_TTL_SECONDS`, graceful cache-failure fallback,
+    and Redis lifecycle management.
+  - Configurable SlowAPI request limiting (`RATE_LIMIT_PER_MINUTE`) for
+    `GET /api/v1/aws/costs` and `GET /api/v1/azure/costs`.
+  - Redis-aware health status reporting and local Redis 7 Docker Compose
+    service with a health check and persistent development volume.
+
 - Sprint 0.6 Azure Cost Management integration:
   - Azure Cost Management Query API integration
     (`app/services/azure/cost_management.py`) using `azure-identity` and
