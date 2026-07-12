@@ -28,6 +28,34 @@ def test_aws_settings_from_env(monkeypatch):
     assert settings.aws_cost_explorer_enabled is False
 
 
+def test_gcp_billing_settings_defaults() -> None:
+    """GCP billing settings have correct defaults and validation."""
+    settings = Settings(JWT_SECRET_KEY="test-secret")
+    assert settings.gcp_billing_enabled is True
+    assert settings.google_application_credentials is None
+    assert settings.gcp_billing_account is None
+    assert settings.gcp_billing_project is None
+    assert settings.gcp_billing_dataset is None
+    assert settings.gcp_billing_table is None
+
+
+def test_gcp_billing_settings_from_env(monkeypatch) -> None:
+    """GCP billing settings load from environment variables."""
+    monkeypatch.setenv("GCP_BILLING_ENABLED", "false")
+    monkeypatch.setenv("GOOGLE_APPLICATION_CREDENTIALS", "/path/to/creds.json")
+    monkeypatch.setenv("GCP_BILLING_ACCOUNT", "012345-678901-234567")
+    monkeypatch.setenv("GCP_BILLING_PROJECT", "billing-project")
+    monkeypatch.setenv("GCP_BILLING_DATASET", "billing_dataset")
+    monkeypatch.setenv("GCP_BILLING_TABLE", "gcp_billing_export_v1")
+    settings = Settings(JWT_SECRET_KEY="test-secret")
+    assert settings.gcp_billing_enabled is False
+    assert settings.google_application_credentials == "/path/to/creds.json"
+    assert settings.gcp_billing_account == "012345-678901-234567"
+    assert settings.gcp_billing_project == "billing-project"
+    assert settings.gcp_billing_dataset == "billing_dataset"
+    assert settings.gcp_billing_table == "gcp_billing_export_v1"
+
+
 def test_shared_infrastructure_settings_defaults() -> None:
     """Shared infrastructure settings expose the new Sprint 0.7 defaults."""
     settings = Settings(JWT_SECRET_KEY="test-secret")

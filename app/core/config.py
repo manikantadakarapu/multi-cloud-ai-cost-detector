@@ -140,6 +140,32 @@ class Settings(BaseSettings):
         validation_alias="AZURE_REQUEST_TIMEOUT",
     )
 
+    # --- GCP Billing ---
+    gcp_billing_enabled: bool = Field(
+        default=True,
+        validation_alias="GCP_BILLING_ENABLED",
+    )
+    google_application_credentials: str | None = Field(
+        default=None,
+        validation_alias="GOOGLE_APPLICATION_CREDENTIALS",
+    )
+    gcp_billing_account: str | None = Field(
+        default=None,
+        validation_alias="GCP_BILLING_ACCOUNT",
+    )
+    gcp_billing_project: str | None = Field(
+        default=None,
+        validation_alias="GCP_BILLING_PROJECT",
+    )
+    gcp_billing_dataset: str | None = Field(
+        default=None,
+        validation_alias="GCP_BILLING_DATASET",
+    )
+    gcp_billing_table: str | None = Field(
+        default=None,
+        validation_alias="GCP_BILLING_TABLE",
+    )
+
     # --- Shared infrastructure ---
     redis_url: str = Field(
         default="redis://localhost:6379/0",
