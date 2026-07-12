@@ -9,8 +9,9 @@ multiple cloud providers (AWS, GCP, Azure, etc.). It provides:
   so the rest of the application can work with a uniform shape
   regardless of the underlying vendor.
 * A provider-agnostic :class:`ProviderError` exception hierarchy.
-* A manual registry (:func:`register_provider` / :func:`get_provider`)
-  used to look up concrete provider implementations by name.
+* A manual registry (:func:`register_provider` / :func:`get_provider` /
+  :func:`resolve_provider`) used to look up concrete provider
+  implementations by name.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from app.providers.exceptions import (
     ProviderCredentialsError,
     ProviderError,
     ProviderInvalidDateRangeError,
+    ProviderNotSupportedException,
     ProviderPermissionsError,
     ProviderServiceError,
     ProviderThrottlingError,
@@ -35,6 +37,7 @@ from app.providers.registry import (
     get_provider_factory,
     list_providers,
     register_provider,
+    resolve_provider,
 )
 from app.providers.schemas import CostResponse, ServiceCost
 
@@ -45,6 +48,7 @@ __all__ = [
     "ProviderError",
     "ProviderCredentialsError",
     "ProviderInvalidDateRangeError",
+    "ProviderNotSupportedException",
     "ProviderPermissionsError",
     "ProviderServiceError",
     "ProviderThrottlingError",
@@ -52,5 +56,6 @@ __all__ = [
     "register_provider",
     "get_provider",
     "get_provider_factory",
+    "resolve_provider",
     "list_providers",
 ]
