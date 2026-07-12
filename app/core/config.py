@@ -28,9 +28,7 @@ from pydantic import AnyUrl, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Project root is two levels up from app/core/config.py
-_PROJECT_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ENV_FILE = os.path.join(_PROJECT_ROOT, ".env")
 
 

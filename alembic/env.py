@@ -28,9 +28,7 @@ from pathlib import Path  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.database.base import Base  # noqa: E402
 
-_auth_models_path = (
-    Path(__file__).resolve().parent.parent / "app" / "auth" / "models.py"
-)
+_auth_models_path = Path(__file__).resolve().parent.parent / "app" / "auth" / "models.py"
 _spec = importlib.util.spec_from_file_location("app.auth.models", _auth_models_path)
 _auth_models = importlib.util.module_from_spec(_spec)
 sys.modules["app.auth.models"] = _auth_models

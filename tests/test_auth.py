@@ -274,9 +274,7 @@ async def test_logout_already_revoked(client: AsyncClient) -> None:
     reg = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
     refresh_token = reg.json()["tokens"]["refresh_token"]
     await client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
-    response = await client.post(
-        "/api/v1/auth/logout", json={"refresh_token": refresh_token}
-    )
+    response = await client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
     assert response.status_code == 200
 
 

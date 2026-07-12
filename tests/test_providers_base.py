@@ -55,12 +55,8 @@ class TestCloudProviderABC:
     async def test_complete_subclass_get_costs_returns_cost_response(self) -> None:
         """A complete subclass's ``get_costs`` returns a :class:`CostResponse`."""
         provider = FakeCloudProvider()
-        response = await provider.get_costs(
-            date(2024, 1, 1), date(2024, 1, 31), "DAILY"
-        )
+        response = await provider.get_costs(date(2024, 1, 1), date(2024, 1, 31), "DAILY")
         assert isinstance(response, CostResponse)
         assert response.provider == "fake"
         assert response.total_cost == 100.0
-        assert response.services == [
-            ServiceCost(service_name="FakeService", cost=100.0)
-        ]
+        assert response.services == [ServiceCost(service_name="FakeService", cost=100.0)]

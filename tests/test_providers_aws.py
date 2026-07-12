@@ -46,9 +46,7 @@ class TestAWSProviderRegistration:
 class TestAWSProviderMetadata:
     def test_provider_name(self) -> None:
         """``provider_name`` returns ``"aws"``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service_cls.return_value = MagicMock()
             provider = AWSCloudProvider()
         assert provider.provider_name() == "aws"
@@ -57,9 +55,7 @@ class TestAWSProviderMetadata:
 class TestAWSProviderAuthenticate:
     def test_authenticate_calls_ensure_client(self) -> None:
         """``authenticate`` delegates to the service's client bootstrap."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
             provider = AWSCloudProvider()
@@ -69,9 +65,7 @@ class TestAWSProviderAuthenticate:
 
     def test_authenticate_propagates_credential_errors(self) -> None:
         """``authenticate`` does not swallow credential errors."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_client.side_effect = AWSCredentialsError("missing")
             mock_service_cls.return_value = mock_service
@@ -83,9 +77,7 @@ class TestAWSProviderAuthenticate:
 class TestAWSProviderValidateCredentials:
     def test_validate_credentials_true_when_authenticate_succeeds(self) -> None:
         """Successful ``authenticate`` yields ``True``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_client.return_value = None
             mock_service_cls.return_value = mock_service
@@ -94,9 +86,7 @@ class TestAWSProviderValidateCredentials:
 
     def test_validate_credentials_false_on_aws_credentials_error(self) -> None:
         """``AWSCredentialsError`` is swallowed and yields ``False``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_client.side_effect = AWSCredentialsError("missing")
             mock_service_cls.return_value = mock_service
@@ -105,9 +95,7 @@ class TestAWSProviderValidateCredentials:
 
     def test_validate_credentials_false_on_no_credentials_error(self) -> None:
         """``NoCredentialsError`` is swallowed and yields ``False``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_client.side_effect = NoCredentialsError()
             mock_service_cls.return_value = mock_service
@@ -116,9 +104,7 @@ class TestAWSProviderValidateCredentials:
 
     def test_validate_credentials_propagates_other_errors(self) -> None:
         """Non-credential exceptions propagate unchanged."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_client.side_effect = RuntimeError("boom")
             mock_service_cls.return_value = mock_service
@@ -145,9 +131,7 @@ class TestAWSProviderGetCosts:
                 {"service_name": "AmazonS3", "cost": 50.25},
             ],
         }
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(return_value=raw)
             mock_service_cls.return_value = mock_service
@@ -187,9 +171,7 @@ class TestAWSProviderGetCosts:
             },
             "services": [],
         }
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(return_value=raw)
             mock_service_cls.return_value = mock_service
@@ -210,13 +192,9 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_aws_credentials_error(self) -> None:
         """``AWSCredentialsError`` becomes ``ProviderCredentialsError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AWSCredentialsError("missing")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AWSCredentialsError("missing"))
             mock_service_cls.return_value = mock_service
             provider = AWSCloudProvider()
             with pytest.raises(ProviderCredentialsError):
@@ -225,9 +203,7 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_no_credentials_error(self) -> None:
         """``NoCredentialsError`` becomes ``ProviderCredentialsError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(side_effect=NoCredentialsError())
             mock_service_cls.return_value = mock_service
@@ -238,13 +214,9 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_throttling_error(self) -> None:
         """``AWSThrottlingError`` becomes ``ProviderThrottlingError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AWSThrottlingError("slow down")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AWSThrottlingError("slow down"))
             mock_service_cls.return_value = mock_service
             provider = AWSCloudProvider()
             with pytest.raises(ProviderThrottlingError):
@@ -253,13 +225,9 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_permissions_error(self) -> None:
         """``AWSPermissionsError`` becomes ``ProviderPermissionsError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AWSPermissionsError("denied")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AWSPermissionsError("denied"))
             mock_service_cls.return_value = mock_service
             provider = AWSCloudProvider()
             with pytest.raises(ProviderPermissionsError):
@@ -268,13 +236,9 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_invalid_date_range(self) -> None:
         """``AWSInvalidDateRangeError`` becomes ``ProviderInvalidDateRangeError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AWSInvalidDateRangeError("bad range")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AWSInvalidDateRangeError("bad range"))
             mock_service_cls.return_value = mock_service
             provider = AWSCloudProvider()
             with pytest.raises(ProviderInvalidDateRangeError):
@@ -283,9 +247,7 @@ class TestAWSProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_service_error(self) -> None:
         """``AWSServiceError`` becomes ``ProviderServiceError``."""
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(side_effect=AWSServiceError("boom"))
             mock_service_cls.return_value = mock_service
@@ -300,9 +262,7 @@ class TestAWSProviderGetCosts:
             {"Error": {"Code": "InternalError", "Message": "oh no"}},
             "GetCostAndUsage",
         )
-        with patch(
-            "app.providers.aws.provider.CostExplorerService"
-        ) as mock_service_cls:
+        with patch("app.providers.aws.provider.CostExplorerService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(side_effect=client_error)
             mock_service_cls.return_value = mock_service

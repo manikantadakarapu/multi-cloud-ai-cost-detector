@@ -70,9 +70,7 @@ class TestUnifiedCostService:
         assert service.provider_name == "test-provider"
         assert service.provider_name is not None
 
-    def test_unknown_provider_raises_unsupported(
-        self, monkeypatch: MonkeyPatch
-    ) -> None:
+    def test_unknown_provider_raises_unsupported(self, monkeypatch: MonkeyPatch) -> None:
         """An unknown provider name raises :class:`ProviderNotSupportedException`."""
         from app.services.cost_service import UnifiedCostService  # noqa: PLC0415
 
@@ -83,9 +81,7 @@ class TestUnifiedCostService:
         assert "does-not-exist" in str(exc_info.value.message)
 
     @pytest.mark.asyncio
-    async def test_get_costs_returns_cost_response(
-        self, monkeypatch: MonkeyPatch
-    ) -> None:
+    async def test_get_costs_returns_cost_response(self, monkeypatch: MonkeyPatch) -> None:
         """``get_costs`` returns a :class:`CostResponse` with the expected shape."""
         from app.services.cost_service import UnifiedCostService  # noqa: PLC0415
 
@@ -106,9 +102,7 @@ class TestUnifiedCostService:
         assert len(response.services) == 1
 
     @pytest.mark.asyncio
-    async def test_credentials_not_checked_at_construction(
-        self, monkeypatch: MonkeyPatch
-    ) -> None:
+    async def test_credentials_not_checked_at_construction(self, monkeypatch: MonkeyPatch) -> None:
         """The service does not call ``authenticate`` or ``validate_credentials``
         at construction time — those are lazy calls made during ``get_costs``."""
         from app.services.cost_service import UnifiedCostService  # noqa: PLC0415

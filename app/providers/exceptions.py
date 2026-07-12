@@ -22,9 +22,7 @@ class ProviderError(Exception):
 class ProviderCredentialsError(ProviderError):
     """Raised when cloud provider credentials are missing or invalid."""
 
-    def __init__(
-        self, message: str = "Cloud provider credentials not found or invalid"
-    ) -> None:
+    def __init__(self, message: str = "Cloud provider credentials not found or invalid") -> None:
         super().__init__(message, error_code="PROVIDER_CREDENTIALS_ERROR")
 
 
@@ -38,9 +36,7 @@ class ProviderThrottlingError(ProviderError):
 class ProviderPermissionsError(ProviderError):
     """Raised when credentials lack required permissions for the API."""
 
-    def __init__(
-        self, message: str = "Insufficient cloud provider permissions"
-    ) -> None:
+    def __init__(self, message: str = "Insufficient cloud provider permissions") -> None:
         super().__init__(message, error_code="PROVIDER_PERMISSIONS_ERROR")
 
 

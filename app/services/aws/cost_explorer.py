@@ -45,14 +45,9 @@ class CostExplorerService:
             session_kwargs = {"region_name": self._settings.aws_default_region}
             if self._settings.aws_profile:
                 session_kwargs["profile_name"] = self._settings.aws_profile
-            if (
-                self._settings.aws_access_key_id
-                and self._settings.aws_secret_access_key
-            ):
+            if self._settings.aws_access_key_id and self._settings.aws_secret_access_key:
                 session_kwargs["aws_access_key_id"] = self._settings.aws_access_key_id
-                session_kwargs["aws_secret_access_key"] = (
-                    self._settings.aws_secret_access_key
-                )
+                session_kwargs["aws_secret_access_key"] = self._settings.aws_secret_access_key
 
             session = boto3.Session(**session_kwargs)
             self._client = session.client(
@@ -78,9 +73,7 @@ class CostExplorerService:
     def _validate_date_range(self, start_date: date, end_date: date) -> None:
         """Validate date range for Cost Explorer API."""
         if start_date > end_date:
-            raise AWSInvalidDateRangeError(
-                "start_date must be before or equal to end_date"
-            )
+            raise AWSInvalidDateRangeError("start_date must be before or equal to end_date")
         if start_date > date.today():
             raise AWSInvalidDateRangeError("start_date cannot be in the future")
         if (end_date - start_date).days > 365 * 2:
@@ -253,13 +246,9 @@ class CostExplorerService:
             if error_code == "ThrottlingException":
                 raise AWSThrottlingError("AWS API request throttled") from e
             if error_code in ("AccessDeniedException", "UnauthorizedOperation"):
-                raise AWSPermissionsError(
-                    "Insufficient AWS permissions for Cost Explorer"
-                ) from e
+                raise AWSPermissionsError("Insufficient AWS permissions for Cost Explorer") from e
             if error_code == "ValidationException":
-                raise AWSInvalidDateRangeError(
-                    f"Invalid request: {error_message}"
-                ) from e
+                raise AWSInvalidDateRangeError(f"Invalid request: {error_message}") from e
 
             raise AWSServiceError(f"AWS Cost Explorer error: {error_message}") from e
         except AWSCostExplorerError:
@@ -270,6 +259,4 @@ class CostExplorerService:
                 "aws_cost_explorer_unexpected_error",
                 extra={"error": str(e), "elapsed_ms": elapsed_ms},
             )
-            raise AWSServiceError(
-                f"Unexpected error querying Cost Explorer: {e}"
-            ) from e
+            raise AWSServiceError(f"Unexpected error querying Cost Explorer: {e}") from e
