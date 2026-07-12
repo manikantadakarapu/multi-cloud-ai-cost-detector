@@ -87,7 +87,9 @@ class TestGCPProviderValidateCredentials:
             RefreshError("refresh failed"),
         ],
     )
-    def test_validate_credentials_false_on_credential_errors(self, side_effect: Exception) -> None:
+    def test_validate_credentials_false_on_credential_errors(
+        self, side_effect: Exception
+    ) -> None:
         """Credential-related exceptions are swallowed and yield ``False``."""
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
@@ -160,7 +162,9 @@ class TestGCPProviderGetCosts:
     async def test_credentials_error_translates(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(side_effect=GCPCredentialsError("missing"))
+            mock_service.get_costs = AsyncMock(
+                side_effect=GCPCredentialsError("missing")
+            )
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 
@@ -171,7 +175,9 @@ class TestGCPProviderGetCosts:
     async def test_quota_exceeded_translates_to_throttling(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(side_effect=GCPQuotaExceededError("rate limited"))
+            mock_service.get_costs = AsyncMock(
+                side_effect=GCPQuotaExceededError("rate limited")
+            )
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 
@@ -208,7 +214,9 @@ class TestGCPProviderGetCosts:
     async def test_default_credentials_error_translates(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(side_effect=DefaultCredentialsError("no creds"))
+            mock_service.get_costs = AsyncMock(
+                side_effect=DefaultCredentialsError("no creds")
+            )
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 
@@ -219,7 +227,9 @@ class TestGCPProviderGetCosts:
     async def test_refresh_error_translates(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(side_effect=RefreshError("refresh failed"))
+            mock_service.get_costs = AsyncMock(
+                side_effect=RefreshError("refresh failed")
+            )
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 
@@ -241,7 +251,9 @@ class TestGCPProviderGetCosts:
     async def test_generic_google_api_error_translates(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(side_effect=GoogleAPIError("service down"))
+            mock_service.get_costs = AsyncMock(
+                side_effect=GoogleAPIError("service down")
+            )
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 

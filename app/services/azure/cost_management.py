@@ -67,7 +67,9 @@ class AzureCostManagementService:
                 self._credential = DefaultAzureCredential()
         except AzureError as e:
             logger.error("azure_credential_failed", extra={"error": str(e)})
-            raise AzureCredentialsError(f"Failed to create Azure credential: {e}") from e
+            raise AzureCredentialsError(
+                f"Failed to create Azure credential: {e}"
+            ) from e
 
         return self._credential
 
@@ -81,7 +83,9 @@ class AzureCostManagementService:
             credential = self._ensure_credential()
             if self._subscription_client is None:
                 self._subscription_client = SubscriptionClient(credential)
-            for subscription in self._subscription_client.subscriptions.list(timeout=self._timeout):
+            for subscription in self._subscription_client.subscriptions.list(
+                timeout=self._timeout
+            ):
                 if getattr(subscription, "state", None) == "Enabled":
                     return str(subscription.subscription_id)
         except ClientAuthenticationError as e:
@@ -207,14 +211,18 @@ class AzureCostManagementService:
                     "Insufficient Azure permissions for Cost Management"
                 ) from e
             if status_code == 400:
-                raise AzureInvalidSubscriptionError(f"Invalid Azure request: {e}") from e
+                raise AzureInvalidSubscriptionError(
+                    f"Invalid Azure request: {e}"
+                ) from e
             raise AzureServiceError(f"Azure Cost Management error: {e}") from e
         except ServiceRequestError as e:
             logger.error("azure_service_request_failed", extra={"error": str(e)})
             raise AzureServiceError(f"Azure service request failed: {e}") from e
         except AzureError as e:
             logger.error("azure_cost_management_unexpected", extra={"error": str(e)})
-            raise AzureServiceError(f"Unexpected Azure Cost Management error: {e}") from e
+            raise AzureServiceError(
+                f"Unexpected Azure Cost Management error: {e}"
+            ) from e
 
         return self._normalize_response(result, start_date, end_date, granularity)
 
@@ -253,18 +261,28 @@ class AzureCostManagementService:
                 else "Unknown"
             )
             try:
-                cost = float(row[cost_idx]) if cost_idx is not None and cost_idx < len(row) else 0.0
+                cost = (
+                    float(row[cost_idx])
+                    if cost_idx is not None and cost_idx < len(row)
+                    else 0.0
+                )
             except (TypeError, ValueError):
                 cost = 0.0
 
-            if currency_idx is not None and currency_idx < len(row) and row[currency_idx]:
+            if (
+                currency_idx is not None
+                and currency_idx < len(row)
+                and row[currency_idx]
+            ):
                 currency = str(row[currency_idx])
 
             if cost > 0:
                 services[service_name] = services.get(service_name, 0.0) + cost
                 total_cost += cost
 
-        sorted_services = sorted(services.items(), key=lambda item: item[1], reverse=True)
+        sorted_services = sorted(
+            services.items(), key=lambda item: item[1], reverse=True
+        )
 
         return {
             "provider": "azure",
@@ -276,6 +294,7 @@ class AzureCostManagementService:
                 "granularity": granularity,
             },
             "services": [
-                {"service_name": name, "cost": round(cost, 2)} for name, cost in sorted_services
+                {"service_name": name, "cost": round(cost, 2)}
+                for name, cost in sorted_services
             ],
         }

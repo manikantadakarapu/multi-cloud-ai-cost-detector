@@ -70,7 +70,9 @@ class TestProviderRegistry:
         """``register_provider`` stores the factory under the given name."""
         assert PROVIDER_REGISTRY[registered_fake] is FakeCloudProvider
 
-    def test_register_provider_overwrites_existing_entry(self, registered_fake: str) -> None:
+    def test_register_provider_overwrites_existing_entry(
+        self, registered_fake: str
+    ) -> None:
         """Re-registering the same name replaces the previous factory."""
 
         class OtherFake(CloudProvider):
@@ -94,7 +96,9 @@ class TestProviderRegistry:
         register_provider(registered_fake, OtherFake)
         assert PROVIDER_REGISTRY[registered_fake] is OtherFake
 
-    def test_get_provider_factory_returns_registered_factory(self, registered_fake: str) -> None:
+    def test_get_provider_factory_returns_registered_factory(
+        self, registered_fake: str
+    ) -> None:
         """``get_provider_factory`` returns the registered factory."""
         factory = get_provider_factory(registered_fake)
         assert factory is FakeCloudProvider
@@ -106,7 +110,9 @@ class TestProviderRegistry:
         assert exc_info.value.error_code == "PROVIDER_NOT_REGISTERED"
         assert "does-not-exist" in exc_info.value.message
 
-    def test_get_provider_factory_callable_builds_instance(self, registered_fake: str) -> None:
+    def test_get_provider_factory_callable_builds_instance(
+        self, registered_fake: str
+    ) -> None:
         """The factory returned by ``get_provider_factory`` builds a new instance."""
         factory = get_provider_factory(registered_fake)
         provider = factory()
@@ -135,7 +141,9 @@ class TestGetProviderDependency:
             get_provider("missing")
 
     @pytest.mark.asyncio
-    async def test_get_provider_works_as_fastapi_dependency(self, registered_fake: str) -> None:
+    async def test_get_provider_works_as_fastapi_dependency(
+        self, registered_fake: str
+    ) -> None:
         """The returned factory works end-to-end as a FastAPI ``Depends`` dependency."""
         factory = get_provider(registered_fake)
         app = FastAPI()
