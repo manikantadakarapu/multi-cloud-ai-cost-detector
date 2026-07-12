@@ -82,7 +82,7 @@ class Settings(BaseSettings):
         ge=1,
         validation_alias="AUTH_RATE_LIMIT_PER_MINUTE",
     )
-    # Placeholder: account lockout after N failed attempts.
+    # Reserved for future account lockout logic after N failed attempts.
     auth_max_login_attempts: int = Field(
         default=5,
         ge=1,

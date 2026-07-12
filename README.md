@@ -309,7 +309,7 @@ All other endpoints under `/api/v1/` require a valid Bearer token.
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime (minutes)  | `30` |
 | `REFRESH_TOKEN_EXPIRE_DAYS`   | Refresh token lifetime (days)     | `7` |
 | `AUTH_RATE_LIMIT_PER_MINUTE`  | Per-IP rate limit on auth endpoints (requests/min) | `60` |
-| `AUTH_MAX_LOGIN_ATTEMPTS`     | Max failed login attempts before lockout  | `5` |
+| `AUTH_MAX_LOGIN_ATTEMPTS`     | Reserved for future lockout logic         | `5` |
 | `REDIS_URL`     | Redis connection URL used for response caching | `redis://localhost:6379/0` |
 | `CACHE_TTL_SECONDS` | Default TTL for cached cost responses (seconds) | `300` |
 | `RATE_LIMIT_PER_MINUTE` | Per-IP rate limit on AWS/Azure cost endpoints | `60` |

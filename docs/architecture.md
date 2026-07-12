@@ -648,7 +648,7 @@ graph LR
 | Password storage | Passwords are hashed with bcrypt and stored as `password_hash` on the `User` model. |
 | Token lifecycle | `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/auth/logout`, `/api/v1/auth/me`. |
 | Rate limiting | Auth endpoints are rate-limited per IP via `AUTH_RATE_LIMIT_PER_MINUTE`. |
-| Login lockout | Repeated failed logins are tracked up to `AUTH_MAX_LOGIN_ATTEMPTS`. |
+| Login lockout | Reserved for future work. `AUTH_MAX_LOGIN_ATTEMPTS` is configured but not yet enforced. |
 | Public endpoints | `GET /` and `GET /api/v1/health` remain unauthenticated — health probes must work before auth is bootstrapped. |
 | Future work | Azure AD (OIDC), Google Login (OAuth 2.0), and RBAC (`analyst`/`admin`) are planned for future sprints. |
 
