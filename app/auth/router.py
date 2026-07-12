@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,6 +44,7 @@ from app.auth.service import (
     UserInactiveError,
 )
 from app.core.config import settings
+from app.core.rate_limit import enforce_auth_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -102,7 +103,9 @@ def _error_response(
         },
     },
 )
+@enforce_auth_rate_limit
 async def register(
+    request: Request,
     payload: UserRegisterRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> UserRegisterResponse:
@@ -172,7 +175,9 @@ async def register(
         },
     },
 )
+@enforce_auth_rate_limit
 async def login(
+    request: Request,
     payload: UserLoginRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> TokenResponse:
@@ -218,7 +223,9 @@ async def login(
         },
     },
 )
+@enforce_auth_rate_limit
 async def refresh(
+    request: Request,
     payload: TokenRefreshRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> TokenResponse:
@@ -254,7 +261,9 @@ async def refresh(
         },
     },
 )
+@enforce_auth_rate_limit
 async def logout(
+    request: Request,
     payload: LogoutRequest,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> MessageResponse:

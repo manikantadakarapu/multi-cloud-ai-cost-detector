@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-07-11 (Sprint 0.7)
+> **Last Updated:** 2026-07-12 (Sprint 1.0)
 
 ---
 
@@ -52,11 +52,12 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 0.2):** the foundation layers are live — application
+**Current state (Sprint 1.0):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
-health probe, and configuration. Cloud ingestion, the AI engine, and
-authentication are designed-for but not yet implemented; their seams are
-described below as forward-looking contracts.
+health probe, configuration, cloud provider integrations, unified cost
+aggregation, Redis caching, rate limiting, and JWT Bearer authentication.
+The AI engine remains planned for Sprint 0.5; its seams are described below
+as forward-looking contracts.
 
 ---
 
@@ -617,30 +618,39 @@ rather than mid-query.
 
 ### Authentication Layer
 
-> **Status:** Planned — Sprint 0.3. Not yet implemented.
+> **Status:** Live — Sprint 0.3 / Sprint 1.0. JWT Bearer authentication is
+> implemented and protects all cost endpoints.
 
-The authentication layer will sit between the route layer and the service
-layer as a FastAPI dependency.
+The authentication layer sits between the route layer and the service
+layer as a FastAPI dependency. Two reusable dependencies are exposed:
+
+- `get_current_user` — validates the JWT and returns the authenticated
+  `User` model.
+- `get_current_active_user` — wraps `get_current_user` and additionally
+  rejects inactive users.
+
+Both dependencies are provider-agnostic and can be attached to any current
+or future endpoint with `Depends(get_current_active_user)`.
 
 ```mermaid
 graph LR
     Client -->|Bearer JWT| API[FastAPI Route]
-    API -->|Depends| AuthN["Auth Dependency"]
-    AuthN -->|verify| JWT["JWT Verifier"]
-    AuthN -->|OIDC| AzureAD["Azure AD"]
-    AuthN -->|OAuth 2.0| Google["Google Login"]
-    AuthN -->|resolve| RBAC["Role / Permission"]
-    RBAC --> Svc["Service Layer"]
+    API -->|Depends| AuthN["get_current_active_user"]
+    AuthN -->|verify| JWT["JWT Verifier<br/>app/auth/jwt.py"]
+    JWT -->|resolve| Repo["User Repository<br/>app/auth/repository.py"]
+    Repo --> DB[(PostgreSQL)]
+    AuthN --> Svc["Service Layer"]
 ```
 
-| Concern | Plan |
-| ------- | ---- |
-| Primary auth | JWT bearer tokens, verified locally (no per-request call to the IdP). |
-| Enterprise SSO | Azure AD via OpenID Connect (OIDC). |
-| Consumer SSO | Google Login via OAuth 2.0. |
-| Authorisation | Role-based access control (RBAC) — `analyst` (read-only) and `admin` (write + config). |
-| Token issuance | `/api/v1/auth/token` after an OIDC/OAuth exchange; refresh tokens for long-lived sessions. |
+| Concern | Implementation |
+| ------- | -------------- |
+| Primary auth | JWT bearer tokens (`HS256`), verified locally. Access tokens expire after `ACCESS_TOKEN_EXPIRE_MINUTES`; refresh tokens expire after `REFRESH_TOKEN_EXPIRE_DAYS`. |
+| Password storage | Passwords are hashed with bcrypt and stored as `password_hash` on the `User` model. |
+| Token lifecycle | `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, `/api/v1/auth/logout`, `/api/v1/auth/me`. |
+| Rate limiting | Auth endpoints are rate-limited per IP via `AUTH_RATE_LIMIT_PER_MINUTE`. |
+| Login lockout | Reserved for future work. `AUTH_MAX_LOGIN_ATTEMPTS` is configured but not yet enforced. |
 | Public endpoints | `GET /` and `GET /api/v1/health` remain unauthenticated — health probes must work before auth is bootstrapped. |
+| Future work | Azure AD (OIDC), Google Login (OAuth 2.0), and RBAC (`analyst`/`admin`) are planned for future sprints. |
 
 The decision to make health unauthenticated is deliberate: orchestrators
 and load balancers probe health without credentials, and a 501 on a health

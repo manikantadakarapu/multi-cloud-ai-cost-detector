@@ -12,9 +12,6 @@ from azure.core.exceptions import (
     HttpResponseError,
     ServiceRequestError,
 )
-from azure.identity import ClientSecretCredential, DefaultAzureCredential
-from azure.mgmt.costmanagement import CostManagementClient
-from azure.mgmt.subscription import SubscriptionClient
 
 from app.core.config import Settings
 from app.services.azure.exceptions import (
@@ -24,6 +21,9 @@ from app.services.azure.exceptions import (
     AzureServiceError,
     AzureThrottlingError,
 )
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
+from azure.mgmt.costmanagement import CostManagementClient
+from azure.mgmt.subscription import SubscriptionClient
 
 logger = logging.getLogger(__name__)
 

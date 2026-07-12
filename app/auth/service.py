@@ -179,11 +179,36 @@ class AuthService:
     # Logout
     # ------------------------------------------------------------------
 
-    async def logout(self, *args: object, **kwargs: object) -> bool:
-        """Return a stateless logout success indicator.
+    async def logout(self, refresh_token: str) -> bool:
+        """Validate a refresh token and return a stateless logout success indicator.
 
-        No token revocation or database state change is performed.
+        No token revocation or database state change is performed. The token
+        is still decoded and validated so malformed, expired, or wrong-type
+        refresh tokens return an error to the caller.
         """
+        if not refresh_token:
+            raise InvalidTokenError("Invalid refresh token.")
+
+        try:
+            payload = decode_token(refresh_token)
+        except jwt.ExpiredSignatureError:
+            raise InvalidTokenError("Refresh token has expired.") from None
+        except jwt.InvalidTokenError:
+            raise InvalidTokenError("Invalid refresh token.") from None
+
+        if payload.get("type") != "refresh":
+            raise InvalidTokenError("Expected a refresh token.")
+
+        user_id_str = payload.get("sub", "")
+        try:
+            user_id = uuid.UUID(user_id_str)
+        except (ValueError, TypeError):
+            raise InvalidTokenError("Malformed user identifier in token.") from None
+
+        user = await self._repo.get_user_by_id(user_id)
+        if user is None or not user.is_active:
+            raise InvalidTokenError("User not found or inactive.")
+
         logger.info("user_logout")
         return True
 
