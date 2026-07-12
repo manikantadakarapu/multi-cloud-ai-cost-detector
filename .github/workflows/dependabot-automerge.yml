@@ -1,0 +1,47 @@
+name: Auto-merge Dependabot PRs
+
+# Enables GitHub's auto-merge on Dependabot pull requests that update
+# Python or GitHub Actions dependencies with a semver patch or minor
+# bump. Major version updates are intentionally left for human review.
+#
+# Requires the repository-level "Allow auto-merge" setting to be on
+# and branch protection on ``main`` that requires the relevant status
+# checks, so that auto-merge waits for CI to pass before the PR is
+# actually merged.
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  dependabot-automerge:
+    name: Enable auto-merge for patch / minor
+    runs-on: ubuntu-latest
+    # Only consider PRs opened by Dependabot.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for minor and patch version updates
+        if: |
+          (steps.metadata.outputs.update-type == 'version-update:semver-minor') ||
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch')
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+          # GitHub will wait for the branch-protection required status
+          # checks to pass before performing the squash merge.
