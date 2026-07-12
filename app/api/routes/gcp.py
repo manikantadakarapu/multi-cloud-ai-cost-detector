@@ -25,13 +25,13 @@ from app.providers.exceptions import (
 )
 from app.providers.schemas import CostResponse
 from app.schemas.gcp import GCPCostRequest
+from app.services.cost_aggregator import CostAggregatorService, get_cost_aggregator
 from app.services.gcp.exceptions import (
     GCPBigQueryError,
     GCPBillingAccountNotFoundError,
     GCPCredentialsError,
     GCPQuotaExceededError,
 )
-from app.services.cost_aggregator import CostAggregatorService, get_cost_aggregator
 
 logger = get_logger(__name__)
 
