@@ -17,10 +17,10 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 0.3 — Local JWT authentication foundation complete.
-> Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
-> and JWT auth (Sprint 0.3) are done. Cloud integrations (Sprint 0.4)
-> and SSO providers (Azure AD, Google) are planned.
+> **Status:** Sprint 0.7 — Provider-independent aggregation, Redis caching,
+> and rate limiting are in progress. Backend foundation (Sprint 0.1),
+> engineering documentation (Sprint 0.2), JWT auth (Sprint 0.3), and cloud
+> providers (Sprints 0.4–0.6) are complete.
 
 ## Table of Contents
 
@@ -49,11 +49,11 @@ MCAICD/
 │   │   ├── deps.py
 │   │   ├── router.py
 │   │   └── routes/
-│   ├── core/              # Configuration, logging, OpenAPI metadata
+│   ├── core/              # Configuration, cache, rate limiting, logging, OpenAPI metadata
 │   ├── database/          # Async engine, session factory, declarative base
 │   ├── models/            # SQLAlchemy ORM models
 │   ├── schemas/          # Pydantic request/response schemas
-│   ├── services/         # Business logic (health checks, future services)
+│   ├── services/         # Business logic (health checks, cost aggregation, future services)
 │   └── main.py           # FastAPI application factory
 ├── scripts/
 │   └── check_db.py       # Database connectivity diagnostic
@@ -78,6 +78,8 @@ MCAICD/
 | Migrations         | Alembic                                       |
 | Settings           | Pydantic v2 + pydantic-settings               |
 | ASGI server        | Uvicorn                                       |
+| Caching            | Redis                                          |
+| Rate limiting      | SlowAPI                                        |
 | Linting / format   | Ruff                                          |
 | Testing            | pytest, pytest-asyncio, httpx                 |
 | Containerisation   | Docker, Docker Compose                        |
@@ -95,7 +97,9 @@ MCAICD/
 - ✅ Alembic migration setup with autogenerate
 - ✅ Structured JSON logging
 - ✅ Centralised environment configuration (Pydantic Settings)
-- ✅ Production health endpoint with database probe
+- ✅ Redis-backed provider cost aggregation with cache TTLs
+- ✅ Request rate limiting on AWS and Azure cost endpoints
+- ✅ Production health endpoint with database and Redis probes
 - ✅ Service root endpoint for discovery
 - ✅ Rich OpenAPI / Swagger documentation
 - ✅ Docker Compose for local PostgreSQL
@@ -155,9 +159,9 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Edit `.env` and set `DATABASE_URL` to match your PostgreSQL credentials.
+The example `.env` matches the Compose defaults for PostgreSQL and Redis.
 
-### Start PostgreSQL
+### Start local infrastructure
 
 ```bash
 docker compose up -d
@@ -213,6 +217,9 @@ uvicorn app.main:app --reload
 | `REFRESH_TOKEN_EXPIRE_DAYS`   | Refresh token lifetime (days)     | `7` |
 | `AUTH_RATE_LIMIT_PER_MINUTE`  | Per-IP rate limit on auth endpoints (requests/min) | `60` |
 | `AUTH_MAX_LOGIN_ATTEMPTS`     | Max failed login attempts before lockout  | `5` |
+| `REDIS_URL`     | Redis connection URL used for response caching | `redis://localhost:6379/0` |
+| `CACHE_TTL_SECONDS` | Default TTL for cached cost responses (seconds) | `300` |
+| `RATE_LIMIT_PER_MINUTE` | Per-IP rate limit on AWS/Azure cost endpoints | `60` |
 
 > **Note:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are used by
 > `docker-compose.yml` to initialise the PostgreSQL container. They are only
@@ -443,9 +450,9 @@ machine-readable handling.
 
 ```bash
 # Infrastructure
-docker compose up -d            # Start PostgreSQL
-docker compose down             # Stop PostgreSQL
-docker compose down -v          # Stop and delete the data volume
+docker compose up -d            # Start PostgreSQL and Redis
+docker compose down             # Stop local infrastructure
+docker compose down -v          # Stop and delete local data volumes
 
 # Database
 alembic upgrade head            # Apply all migrations

@@ -22,7 +22,7 @@ provider integrations, authentication, and the AI recommendation engine.
 ### Prerequisites
 
 - **Python** 3.12 or newer
-- **Docker Desktop** (for the local PostgreSQL instance)
+- **Docker Desktop** (for the local PostgreSQL and Redis instances)
 - **Git**
 
 ### Clone the repository
@@ -52,11 +52,11 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-Edit `.env` and set `DATABASE_URL` to match your PostgreSQL credentials.
+The example `.env` matches the Compose defaults for PostgreSQL and Redis.
 See the [Environment Variables](README.md#environment-variables) table in the
 README for the full list.
 
-### Start PostgreSQL
+### Start local infrastructure
 
 ```bash
 docker compose up -d

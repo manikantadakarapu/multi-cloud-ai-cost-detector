@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.deps import get_session_factory
+from app.core.cache import RedisCache, get_cache
 from app.schemas.health import HealthCheckResponse
 from app.services.health import HealthService
 
@@ -21,8 +22,9 @@ router = APIRouter()
     summary="Service health",
     description=(
         "Returns the service health status. Performs a database round-trip "
-        "(``SELECT 1``) on every call. Responds with HTTP 503 when the "
-        "database is unreachable so upstream proxies can drain traffic."
+        "(``SELECT 1``) and a Redis ping on every call. Responds with HTTP "
+        "503 when either dependency is unreachable so upstream proxies can "
+        "drain traffic."
     ),
 )
 async def health_check(
@@ -30,9 +32,10 @@ async def health_check(
     session_factory: async_sessionmaker[AsyncSession] = Depends(  # noqa: B008
         get_session_factory,
     ),
+    cache: RedisCache = Depends(get_cache),  # noqa: B008
 ) -> HealthCheckResponse:
-    """Probe database connectivity and report aggregate service health."""
-    health = HealthService(session_factory)
+    """Probe database and Redis connectivity and report aggregate health."""
+    health = HealthService(session_factory, cache)
     payload = await health.get_status()
 
     if payload["status"] != "healthy":

@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-07-06 (Sprint 0.6)
+> **Last Updated:** 2026-07-11 (Sprint 0.7)
 
 ---
 
@@ -24,6 +24,7 @@
 - [System Components](#system-components)
   - [Backend](#backend)
   - [Database](#database)
+  - [Cost Query Pipeline](#cost-query-pipeline)
   - [Authentication Layer](#authentication-layer)
   - [AI Layer](#ai-layer)
   - [Cloud Integration Layer](#cloud-integration-layer)
@@ -540,13 +541,36 @@ clients.
 
 | Responsibility | Location | Notes |
 | -------------- | -------- | ----- |
-| Application factory & lifespan | `app/main.py` | Lifespan hooks configure logging on startup and dispose the DB engine on shutdown. |
+| Application factory & lifespan | `app/main.py` | Lifespan hooks configure logging on startup, initialise/shutdown Redis, and dispose the DB engine on shutdown. |
 | Route aggregation | `app/api/router.py` | All feature routers mounted under `/api/v1`. The root discovery route lives at `/`. |
-| Health route | `app/api/routes/health.py` | Readiness probe with a live DB round-trip. Returns 503 on failure. |
+| Health route | `app/api/routes/health.py` | Readiness probe with live DB and Redis checks. Returns 503 when either dependency is down. |
 | Root route | `app/api/routes/root.py` | Discovery payload: name, version, docs, health links. |
 | Dependencies | `app/api/deps.py` | Request-scoped session (`get_db_session`) and session-factory (`get_session_factory`) for graceful degradation. |
-| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService`. |
+| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService` and `CostAggregatorService`. |
 | OpenAPI metadata | `app/core/openapi.py` | Title, description, tags, contact, licence. |
+
+### Cost Query Pipeline
+
+Cost retrieval now flows through a provider-independent aggregation service
+instead of route handlers talking to providers directly.
+
+```mermaid
+graph LR
+    Route["AWS/Azure Route"] --> Agg["CostAggregatorService"]
+    Agg --> Cache["Redis Cache"]
+    Agg --> Registry["Provider Registry"]
+    Registry --> Provider["CloudProvider implementation"]
+    Provider --> Normalized["Normalized CostResponse"]
+    Normalized --> Route
+```
+
+| Concern | Implementation |
+| ------- | -------------- |
+| Aggregation | `app/services/cost_aggregator.py` validates the provider, resolves the registered implementation, and returns the normalized `CostResponse`. |
+| Cache key | `provider + subscription/account scope + start/end date + granularity`. |
+| Cache policy | JSON payloads are cached for `CACHE_TTL_SECONDS` (default: 300). Cache failures fall back to the provider call. |
+| Rate limiting | AWS and Azure cost routes are rate limited per client IP using `RATE_LIMIT_PER_MINUTE` (default: 60/minute). |
+| Route design | Routes remain thin: validation, auth, aggregation call, typed HTTP error translation. |
 
 **Why a factory?** A factory lets tests construct the app with overridden
 dependencies, and lets the lifespan hook own the database engine lifecycle
@@ -657,7 +681,10 @@ lock-in. It is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 > **Status:** Planned — Sprint 0.4. Not yet implemented.
 
 The cloud integration layer ingests billing and usage data from each
-provider and normalises it into the unified schema.
+provider and normalises it into the unified schema. For the live cost-query
+path, provider-specific responses are fetched through the provider
+abstraction and mapped into the shared `CostResponse` shape before being
+returned to clients.
 
 ```mermaid
 graph TD
@@ -691,7 +718,9 @@ graph TD
 | Pillar | Status | Plan |
 | ------ | ------ | ---- |
 | **Logging** | ✅ Live | Structured JSON via `JsonFormatter` in `app/core/logging.py`. Every log line is a JSON object with `timestamp`, `level`, `logger`, `message`, and arbitrary structured fields. The `uvicorn.access` logger is captured. |
-| **Health** | ✅ Live | `GET /api/v1/health` — a readiness probe with a live `SELECT 1`. Returns 503 when the database is unreachable. |
+| **Health** | ✅ Live | `GET /api/v1/health` — a readiness probe with live database and Redis checks. Returns 503 when either dependency is unreachable. |
+| **Cache** | ✅ Live | Redis-backed response cache for provider cost queries. Cached payloads are keyed by provider, scope, and date range. |
+| **Rate limiting** | ✅ Live | Per-IP request limiting on the AWS and Azure cost routes. |
 | **Metrics** | ⏳ Planned | Prometheus `/metrics` endpoint with RED metrics (rate, errors, duration) per route, plus DB pool gauges. |
 | **Tracing** | ⏳ Planned | OpenTelemetry traces propagating through the service and provider-call boundaries. |
 | **Dashboards** | ⏳ Planned | Grafana dashboards derived from Prometheus metrics and structured logs. |
@@ -720,6 +749,7 @@ graph TD
 | Precedence | CLI args > process env > `.env` file > field defaults. |
 | Validation | Pydantic v2 validates types, ranges, and `Literal` enums at construction. |
 | Diagnostics | `database_url_source` reports whether `DATABASE_URL` came from the process env, the `.env` file, or the default — surfaced in `alembic env.py` and `scripts/check_db.py` to eliminate the most common setup footgun. |
+| Cache / rate limit | `REDIS_URL`, `CACHE_TTL_SECONDS`, and `RATE_LIMIT_PER_MINUTE` configure the shared cost cache and request throttling. |
 | Environments | `app_env` is a `Literal["local", "development", "staging", "production"]`. `is_production` is a computed field. |
 | Secrets | Never committed. `.gitignore` excludes `.env` and `.env.*` (except `.env.example`). Production secrets will be injected via the orchestrator's secret store (planned). |
 
@@ -731,6 +761,7 @@ silently.**
 | Scenario | Behaviour |
 | -------- | --------- |
 | Database unreachable (health probe) | `HealthService` catches `SQLAlchemyError` and `OSError`, logs the exception, and returns `status=unhealthy`. The route sets HTTP 503 so load balancers drain the instance. |
+| Redis unavailable (cache / health probe) | `RedisCache` degrades to a no-op cache and the health endpoint reports `redis=down`. Cost queries continue without cached reads/writes. |
 | Database unreachable (CRUD endpoint) | The request-scoped session raises during dependency resolution. FastAPI returns 500. A global exception handler (planned) will translate this into a structured error response. |
 | Invalid request body | Pydantic validation returns 422 with a detailed error list. FastAPI default behaviour, retained. |
 | Unknown route | FastAPI returns 404. |
@@ -808,13 +839,13 @@ bottleneck justifies the cost.
 
 ### Deployment Architecture
 
-> **Status:** Docker Compose for local PostgreSQL is live. Application
+> **Status:** Docker Compose for local PostgreSQL and Redis is live. Application
 > containerisation and Kubernetes deployment are planned for Sprint 0.9.
 
 ```mermaid
 graph TD
     subgraph "Local Development (today)"
-        Dev["Developer Machine"] --> Compose["docker compose<br/>(PostgreSQL 16)"]
+        Dev["Developer Machine"] --> Compose["docker compose<br/>(PostgreSQL 16 + Redis 7)"]
         Dev --> Uvicorn["uvicorn --reload<br/>(FastAPI app)"]
         Uvicorn --> Compose
     end
@@ -832,7 +863,7 @@ graph TD
 
 | Stage | Mechanism |
 | ----- | -------- |
-| Local | `docker compose up -d` for PostgreSQL; `uvicorn --reload` for the app. |
+| Local | `docker compose up -d` for PostgreSQL and Redis; `uvicorn --reload` for the app. |
 | Container (planned) | A `Dockerfile` for the application itself, multi-stage, slim base. |
 | Orchestration (planned) | Kubernetes manifests + Helm chart. HPA on CPU and request rate. |
 | IaC (planned) | Terraform for cloud backing (VPC, RDS, ElastiCache, IAM). |
