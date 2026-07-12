@@ -17,11 +17,11 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 0.9 — Provider-independent cost aggregation complete.
+> **Status:** Sprint 1.0 — Authentication & API Security complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
 > aggregation (Sprint 0.7), and Redis caching/rate limiting (Sprint 0.8)
-> are complete.
+> are complete. All cost endpoints are now JWT-protected.
 
 ## Table of Contents
 
@@ -30,6 +30,7 @@ teams can act on directly.
 - [Features Completed](#features-completed)
 - [Roadmap](#roadmap)
 - [Getting Started](#getting-started)
+- [Authentication](#authentication)
 - [Environment Variables](#environment-variables)
 - [Development Commands](#development-commands)
 - [Development Workflow](#development-workflow)
@@ -105,6 +106,8 @@ MCAICD/
 - ✅ Rich OpenAPI / Swagger documentation
 - ✅ Docker Compose for local PostgreSQL
 - ✅ Local JWT authentication (register, login, refresh, logout, `/me`)
+- ✅ JWT Bearer protection on all cost endpoints (`/api/v1/aws/costs`, `/api/v1/azure/costs`, `/api/v1/gcp/costs`, `/api/v1/costs`)
+- ✅ Provider-agnostic auth dependencies (`get_current_user`, `get_current_active_user`) reusable by any future endpoint
 
 ---
 
@@ -114,14 +117,14 @@ MCAICD/
 | ------ | ------ | ----------- |
 | 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
 | 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
-| 0.3 | 🟡 In progress | Authentication — local JWT foundation (register, login, refresh, logout, `/me`) complete. Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control planned. |
+| 0.3 | ✅ Complete | Authentication — local JWT foundation (register, login, refresh, logout, `/me`) complete. All cost endpoints are JWT-protected. Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control remain planned for future sprints. |
 | 0.4 | ✅ Complete | Cloud integrations — AWS Cost Explorer, Azure Cost Management, GCP Billing export complete (auth, service, endpoint, tests). Unified normalised schema implemented. |
 | 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
 | 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
 | 0.7 | ✅ Complete | Provider-independent cost aggregation — unified `/api/v1/costs` endpoint with provider dispatch, shared `CostResponse` schema, provider registry with `ProviderNotSupportedException`, and full test coverage. |
 | 0.8 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
-| 1.0 | 🔭 Future | Production release — hardening, load testing, security audit, GA.
+| 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection verified on all endpoints, quality gates pass, documentation updated. |
 
 ---
 
@@ -194,7 +197,95 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/auth/me        | Current authenticated user profile          |
 | http://localhost:8000/api/v1/aws/costs       | Retrieve AWS costs grouped by service (requires AWS credentials) |
 | http://localhost:8000/api/v1/azure/costs     | Retrieve Azure costs grouped by service (requires Azure credentials) |
+| http://localhost:8000/api/v1/gcp/costs       | Retrieve GCP costs grouped by service (requires GCP credentials) |
 | http://localhost:8000/api/v1/costs           | Unified endpoint — retrieve costs from any provider (aws, azure, gcp) |
+
+---
+
+## Authentication
+
+The API uses **JWT Bearer tokens** for authentication. Obtain an access
+token by registering a user or logging in, then include it in the
+`Authorization: Bearer <token>` header on protected endpoints.
+
+### Register
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "Str0ngP@ss!",
+    "full_name": "Example User"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "user": {
+    "id": "...",
+    "email": "user@example.com",
+    "full_name": "Example User",
+    "is_active": true,
+    "created_at": "...",
+    "updated_at": "...",
+    "last_login_at": null
+  },
+  "tokens": {
+    "access_token": "<access-jwt>",
+    "refresh_token": "<refresh-jwt>",
+    "token_type": "bearer",
+    "expires_in": 1800
+  }
+}
+```
+
+### Login
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "Str0ngP@ss!"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "<access-jwt>",
+  "refresh_token": "<refresh-jwt>",
+  "token_type": "bearer",
+  "expires_in": 1800
+}
+```
+
+### Call a protected endpoint
+
+```bash
+curl -H "Authorization: Bearer <access_token>" \
+  "http://localhost:8000/api/v1/costs?provider=aws&start_date=2024-01-01&end_date=2024-01-31&granularity=MONTHLY"
+```
+
+### Current user profile
+
+```bash
+curl -H "Authorization: Bearer <access_token>" \
+  "http://localhost:8000/api/v1/auth/me"
+```
+
+### Public endpoints
+
+The following endpoints do **not** require authentication:
+
+- `GET /` — service root / discovery
+- `GET /api/v1/health` — health probe with database and Redis checks
+
+All other endpoints under `/api/v1/` require a valid Bearer token.
 
 ---
 
