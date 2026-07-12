@@ -57,9 +57,7 @@ class _BigQueryRow(dict):
 
 
 def _row(service_name: str, cost: float, currency: str = "USD") -> _BigQueryRow:
-    return _BigQueryRow(
-        service_name=service_name, total_cost=cost, currency=currency
-    )
+    return _BigQueryRow(service_name=service_name, total_cost=cost, currency=currency)
 
 
 class TestGCPBillingService:
@@ -209,7 +207,9 @@ class TestGCPBillingService:
         param_names = [p.name for p in job_config.query_parameters]
         assert param_names == ["start_date", "end_date"]
         param_values = [p.value for p in job_config.query_parameters]
-        assert [(v.isoformat() if hasattr(v, "isoformat") else v) for v in param_values] == [
+        assert [
+            (v.isoformat() if hasattr(v, "isoformat") else v) for v in param_values
+        ] == [
             "2024-01-01",
             "2024-01-31",
         ]
@@ -304,9 +304,7 @@ class TestGCPBillingService:
 
     def test_explicit_credentials_path_uses_service_account(self) -> None:
         """When GOOGLE_APPLICATION_CREDENTIALS is set, load via service_account."""
-        settings = _make_settings(
-            GOOGLE_APPLICATION_CREDENTIALS="/path/to/creds.json"
-        )
+        settings = _make_settings(GOOGLE_APPLICATION_CREDENTIALS="/path/to/creds.json")
         svc = GCPBillingService(settings)
 
         with (
@@ -339,9 +337,7 @@ class TestGCPBillingService:
                 svc._build_client()
 
     def test_malformed_credentials_file_raises_credentials_error(self) -> None:
-        settings = _make_settings(
-            GOOGLE_APPLICATION_CREDENTIALS="/path/to/bad.json"
-        )
+        settings = _make_settings(GOOGLE_APPLICATION_CREDENTIALS="/path/to/bad.json")
         svc = GCPBillingService(settings)
 
         with patch.object(billing_module, "service_account") as mock_sa:

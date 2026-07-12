@@ -6,9 +6,7 @@ from __future__ import annotations
 class GCPBillingError(Exception):
     """Base exception for GCP Billing errors."""
 
-    def __init__(
-        self, message: str, error_code: str = "GCP_BILLING_ERROR"
-    ) -> None:
+    def __init__(self, message: str, error_code: str = "GCP_BILLING_ERROR") -> None:
         self.message = message
         self.error_code = error_code
         super().__init__(message)

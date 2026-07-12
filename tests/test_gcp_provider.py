@@ -203,9 +203,7 @@ class TestGCPProviderGetCosts:
     async def test_bigquery_error_translates_to_service_error(self) -> None:
         with patch("app.providers.gcp.provider.GCPBillingService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=GCPBigQueryError("boom")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=GCPBigQueryError("boom"))
             mock_service_cls.return_value = mock_service
             provider = GCPCloudProvider()
 

@@ -80,15 +80,11 @@ class GCPBillingService:
             return bigquery.Client(project=project)
         except (DefaultCredentialsError, RefreshError) as e:
             logger.error("gcp_credentials_failed", extra={"error": str(e)})
-            raise GCPCredentialsError(
-                "GCP credentials not found or invalid"
-            ) from e
+            raise GCPCredentialsError("GCP credentials not found or invalid") from e
         except ValueError as e:
             # google.oauth2 raises ValueError for malformed key files.
             logger.error("gcp_credentials_invalid", extra={"error": str(e)})
-            raise GCPCredentialsError(
-                f"Invalid GCP credentials file: {e}"
-            ) from e
+            raise GCPCredentialsError(f"Invalid GCP credentials file: {e}") from e
         except Exception as e:  # pragma: no cover - defensive catch-all
             logger.error("gcp_client_creation_failed", extra={"error": str(e)})
             raise GCPCredentialsError(
@@ -123,9 +119,7 @@ class GCPBillingService:
                 "GCP_BILLING_DATASET is not configured"
             )
         if not self._settings.gcp_billing_table:
-            raise GCPBillingAccountNotFoundError(
-                "GCP_BILLING_TABLE is not configured"
-            )
+            raise GCPBillingAccountNotFoundError("GCP_BILLING_TABLE is not configured")
 
     # -- Query construction ---------------------------------------------------
 
@@ -207,9 +201,7 @@ class GCPBillingService:
             raise GCPBigQueryError(f"GCP BigQuery error: {e}") from e
         except DefaultCredentialsError as e:
             logger.error("gcp_credentials_missing", extra={"error": str(e)})
-            raise GCPCredentialsError(
-                "GCP credentials not found or invalid"
-            ) from e
+            raise GCPCredentialsError("GCP credentials not found or invalid") from e
 
         return [dict(row) for row in rows]
 
@@ -298,9 +290,7 @@ class GCPBillingService:
             }
 
         if granularity not in self.SUPPORTED_GRANULARITIES:
-            raise GCPBillingAccountNotFoundError(
-                f"Invalid granularity: {granularity}"
-            )
+            raise GCPBillingAccountNotFoundError(f"Invalid granularity: {granularity}")
 
         self._validate_config()
         self._validate_date_range(start_date, end_date)
