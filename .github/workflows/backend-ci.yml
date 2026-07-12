@@ -10,7 +10,6 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
-    fail-fast: false
 
     steps:
       - name: Checkout repository
