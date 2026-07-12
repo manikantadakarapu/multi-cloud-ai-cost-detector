@@ -19,6 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.cache import RedisCache, get_cache
 from app.core.config import settings
 from app.core.logging import get_logger
 
@@ -34,13 +35,18 @@ logger = get_logger(__name__)
 class HealthService:
     """Probes infrastructure dependencies and reports aggregate health.
 
-    Currently the only dependency is PostgreSQL. The service is constructed
-    per-request with a session *factory* (not an open session) so it can
-    fail gracefully when the database is unreachable.
+    The service probes PostgreSQL and Redis per request. It is constructed
+    with a session *factory* (not an open session) so it can fail gracefully
+    when the database is unreachable.
     """
 
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        cache: RedisCache | None = None,
+    ) -> None:
         self._session_factory = session_factory
+        self._cache = cache or get_cache()
 
     async def check_database(self) -> bool:
         """Return ``True`` if a trivial round-trip to PostgreSQL succeeds.
@@ -65,9 +71,12 @@ class HealthService:
         one-to-one, keeping the route handler trivial.
         """
         db_ok = await self.check_database()
+        redis_ok = await self._cache.health()
         return {
-            "status": "healthy" if db_ok else "unhealthy",
-            "database": "connected" if db_ok else "disconnected",
+            "status": "healthy" if db_ok and redis_ok else "unhealthy",
+            "database": "up" if db_ok else "down",
+            "redis": "up" if redis_ok else "down",
+            "application": "up",
             "version": settings.app_version,
             "environment": settings.app_env,
             "timestamp": datetime.now(UTC).isoformat(),

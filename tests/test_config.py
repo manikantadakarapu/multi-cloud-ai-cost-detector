@@ -26,3 +26,11 @@ def test_aws_settings_from_env(monkeypatch):
     assert settings.aws_default_region == "eu-west-1"
     assert settings.aws_profile == "production"
     assert settings.aws_cost_explorer_enabled is False
+
+
+def test_shared_infrastructure_settings_defaults() -> None:
+    """Shared infrastructure settings expose the new Sprint 0.7 defaults."""
+    settings = Settings(JWT_SECRET_KEY="test-secret")
+    assert settings.redis_url == "redis://localhost:6379/0"
+    assert settings.cache_ttl_seconds == 300
+    assert settings.rate_limit_per_minute == 60

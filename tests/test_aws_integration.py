@@ -12,10 +12,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from httpx import AsyncClient
 
-from app.api.routes.aws import aws_provider_dependency
+from app.api.routes.aws import aws_cost_aggregator_dependency, aws_provider_dependency
 from app.core.config import settings
 from app.main import app
 from app.providers import CostResponse, ServiceCost
+from app.services.cost_aggregator import CostAggregatorService
 
 
 def _build_mock_provider(get_costs: AsyncMock) -> MagicMock:
@@ -29,7 +30,11 @@ def _override_provider(mock_provider: MagicMock) -> None:
     async def _provider() -> MagicMock:
         return mock_provider
 
+    async def _aggregator() -> CostAggregatorService:
+        return CostAggregatorService("aws", mock_provider, cache=None)
+
     app.dependency_overrides[aws_provider_dependency] = _provider
+    app.dependency_overrides[aws_cost_aggregator_dependency] = _aggregator
 
 
 class TestAWSIntegration:

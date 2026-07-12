@@ -140,6 +140,22 @@ class Settings(BaseSettings):
         validation_alias="AZURE_REQUEST_TIMEOUT",
     )
 
+    # --- Shared infrastructure ---
+    redis_url: str = Field(
+        default="redis://localhost:6379/0",
+        validation_alias="REDIS_URL",
+    )
+    cache_ttl_seconds: int = Field(
+        default=300,
+        ge=1,
+        validation_alias="CACHE_TTL_SECONDS",
+    )
+    rate_limit_per_minute: int = Field(
+        default=60,
+        ge=1,
+        validation_alias="RATE_LIMIT_PER_MINUTE",
+    )
+
     @computed_field
     @property
     def is_production(self) -> bool:
