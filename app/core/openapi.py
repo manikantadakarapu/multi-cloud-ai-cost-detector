@@ -42,6 +42,12 @@ OPENAPI_TAGS: list[dict[str, str]] = [
             "daily trends, comparisons, and deterministic cost drivers."
         ),
     },
+    {
+        "name": "dashboard",
+        "description": (
+            "Frontend-ready dashboard summary and deterministic insight contracts."
+        ),
+    },
 ]
 
 

@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.2 Frontend Readiness & Intelligence Contracts:
+  - Authenticated `GET /api/v1/dashboard/summary` with overview, provider/service breakdowns, daily trend, and cost drivers.
+  - Authenticated `GET /api/v1/dashboard/insights` with explicit deterministic insight objects.
+  - Stable Pydantic contracts for dashboard payloads and controlled insight types: `cost_increase`, `cost_decrease`, and `top_cost_driver`.
+  - Redis-backed dashboard summary and insight caching with query- and user-scoped keys, reusing the existing graceful fallback.
+  - Focused dashboard API, validation, insight, and cache tests.
+
 - Sprint 1.1 Cost Analytics & Intelligence Foundation:
   - Normalized `daily_costs` points in the shared `CostResponse` contract for AWS, Azure, and GCP.
   - Authenticated `/api/v1/analytics/{summary,providers,services,trends,compare,drivers}` endpoints.

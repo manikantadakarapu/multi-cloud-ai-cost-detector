@@ -11,7 +11,7 @@
 > hiring managers who need to understand where the project is headed and how
 > the near-term work ladders up to the long-term vision.
 >
-> **Last Updated:** 2026-08-20 (Sprint 1.1)
+> **Last Updated:** 2026-08-20 (Sprint 1.2)
 >
 > **Status legend:** ✅ Complete · 🚧 In Progress · ⏳ Planned · 🔭 Future
 
@@ -139,6 +139,24 @@ and tests plus quality gates pass.
 
 ---
 
+### Sprint 1.2 — Frontend Readiness & Intelligence Contracts ✅ Complete
+
+**Focus:** Stabilize the dashboard API and establish a deterministic insight
+boundary for future intelligence services.
+
+| Deliverable | Status |
+| ----------- | ------ |
+| Frontend-oriented dashboard summary contract | ✅ Delivered |
+| Deterministic insight schema and rule generation | ✅ Delivered |
+| Authenticated dashboard endpoints with Redis reuse | ✅ Delivered |
+| Focused tests, OpenAPI, ADR, and documentation | ✅ Delivered |
+
+**Exit criteria:** the frontend can consume explicit summary and insight
+payloads without provider-specific knowledge, and no AI/LLM implementation is
+introduced.
+
+---
+
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in
@@ -177,6 +195,7 @@ Highlights:
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection, auth rate limiting, logout validation, tests, and documentation. |
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — daily normalization, analytics APIs, Decimal calculations, currency validation, cost drivers, and documentation. |
+| 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insights, explicit schemas, cache reuse, and documentation. |
 
 ---
 

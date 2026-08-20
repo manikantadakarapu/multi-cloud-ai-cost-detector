@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-08-20 (Sprint 1.1)
+> **Last Updated:** 2026-08-20 (Sprint 1.2)
 
 ---
 
@@ -52,13 +52,14 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 1.1):** the foundation layers are live — application
+**Current state (Sprint 1.2):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
 health probe, configuration, cloud provider integrations, unified cost
 aggregation, Redis caching, rate limiting, JWT Bearer authentication, and
 deterministic cost analytics. The analytics layer remains intentionally
 descriptive; anomaly detection, forecasting, and AI recommendations are
-future work.
+future work. A frontend-ready dashboard contract and deterministic insight
+boundary now sit above analytics; no AI or LLM is called.
 The AI engine remains planned for Sprint 0.5; its seams are described below
 as forward-looking contracts.
 
@@ -551,7 +552,7 @@ clients.
 | Health route | `app/api/routes/health.py` | Readiness probe with live DB and Redis checks. Returns 503 when either dependency is down. |
 | Root route | `app/api/routes/root.py` | Discovery payload: name, version, docs, health links. |
 | Dependencies | `app/api/deps.py` | Request-scoped session (`get_db_session`) and session-factory (`get_session_factory`) for graceful degradation. |
-| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService`, `CostAggregatorService`, and `AnalyticsService`. |
+| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService`, `CostAggregatorService`, `AnalyticsService`, and `DashboardService`. |
 | OpenAPI metadata | `app/core/openapi.py` | Title, description, tags, contact, licence. |
 
 ### Cost Query Pipeline
@@ -568,6 +569,22 @@ with zeroes for stable trend output. Analytics results are not persisted in a
 new database table because they are deterministic projections of live provider
 responses; persistence can be introduced later if reporting requirements need
 historical snapshots.
+
+### Dashboard and intelligence boundary
+
+`DashboardService` composes `AnalyticsService` outputs into stable
+frontend-oriented schemas exposed at `/api/v1/dashboard/summary`. Its
+deterministic rule layer exposes `/api/v1/dashboard/insights` using the
+provider-independent `CostInsight` contract. The boundary is intentionally:
+
+```text
+Cloud providers → normalized costs → analytics → dashboard contracts → future AI
+```
+
+Current insight types are limited to cost increases, cost decreases, and top
+cost drivers. They use fixed thresholds and no natural-language model. Future
+AI services must consume these normalized analytics/contracts rather than
+bypassing provider abstractions.
 
 ```mermaid
 graph LR
