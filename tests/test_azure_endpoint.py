@@ -163,7 +163,9 @@ class TestAzureEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_get_costs_invalid_granularity(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_invalid_granularity(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Invalid granularity returns 422."""
         response = await auth_client.get(
             "/api/v1/azure/costs",
@@ -188,10 +190,14 @@ class TestAzureEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_get_costs_azure_credentials_error(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_azure_credentials_error(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Provider credentials error returns 500."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=ProviderCredentialsError("No credentials"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=ProviderCredentialsError("No credentials")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -207,7 +213,9 @@ class TestAzureEndpoint:
     async def test_get_costs_azure_throttling(self, auth_client: AsyncClient) -> None:
         """Provider throttling error returns 429."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=ProviderThrottlingError("Rate limited"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=ProviderThrottlingError("Rate limited")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -223,7 +231,9 @@ class TestAzureEndpoint:
     async def test_get_costs_azure_permissions(self, auth_client: AsyncClient) -> None:
         """Provider permissions error returns 403."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=ProviderPermissionsError("Access denied"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=ProviderPermissionsError("Access denied")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -267,7 +277,9 @@ class TestAzureEndpoint:
         assert data["services"] == []
 
     @pytest.mark.asyncio
-    async def test_get_costs_invalid_subscription(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_invalid_subscription(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Azure invalid subscription error returns 400 with X-Error-Code."""
         mock_provider = _build_mock_provider()
         mock_provider.get_costs = AsyncMock(
@@ -289,7 +301,9 @@ class TestAzureEndpoint:
     async def test_get_costs_invalid_date_range(self, auth_client: AsyncClient) -> None:
         """Provider invalid date range error returns 400 with X-Error-Code."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=ProviderInvalidDateRangeError("Bad range"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=ProviderInvalidDateRangeError("Bad range")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -303,10 +317,14 @@ class TestAzureEndpoint:
         assert response.headers["X-Error-Code"] == "PROVIDER_INVALID_DATE_RANGE"
 
     @pytest.mark.asyncio
-    async def test_get_costs_azure_native_credentials_error(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_azure_native_credentials_error(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Azure credentials error returns 500 with X-Error-Code."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=AzureCredentialsError("No credentials"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=AzureCredentialsError("No credentials")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -320,10 +338,14 @@ class TestAzureEndpoint:
         assert response.headers["X-Error-Code"] == "AZURE_CREDENTIALS_ERROR"
 
     @pytest.mark.asyncio
-    async def test_get_costs_azure_native_throttling(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_azure_native_throttling(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Azure throttling error returns 429 with X-Error-Code."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=AzureThrottlingError("Rate limited"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=AzureThrottlingError("Rate limited")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -337,10 +359,14 @@ class TestAzureEndpoint:
         assert response.headers["X-Error-Code"] == "AZURE_THROTTLING_ERROR"
 
     @pytest.mark.asyncio
-    async def test_get_costs_azure_native_permissions(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_azure_native_permissions(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Azure permissions error returns 403 with X-Error-Code."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=AzurePermissionsError("Access denied"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=AzurePermissionsError("Access denied")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -354,10 +380,14 @@ class TestAzureEndpoint:
         assert response.headers["X-Error-Code"] == "AZURE_PERMISSIONS_ERROR"
 
     @pytest.mark.asyncio
-    async def test_get_costs_azure_service_error(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_azure_service_error(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Azure service error returns 502 with X-Error-Code."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=AzureServiceError("Azure service error"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=AzureServiceError("Azure service error")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -371,10 +401,14 @@ class TestAzureEndpoint:
         assert response.headers["X-Error-Code"] == "AZURE_SERVICE_ERROR"
 
     @pytest.mark.asyncio
-    async def test_get_costs_provider_service_error(self, auth_client: AsyncClient) -> None:
+    async def test_get_costs_provider_service_error(
+        self, auth_client: AsyncClient
+    ) -> None:
         """Provider service error returns 502."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(side_effect=ProviderServiceError("Service error"))
+        mock_provider.get_costs = AsyncMock(
+            side_effect=ProviderServiceError("Service error")
+        )
         _override_provider(mock_provider)
 
         response = await auth_client.get(

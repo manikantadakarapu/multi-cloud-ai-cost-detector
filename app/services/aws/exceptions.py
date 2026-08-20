@@ -6,7 +6,9 @@ from __future__ import annotations
 class AWSCostExplorerError(Exception):
     """Base exception for AWS Cost Explorer errors."""
 
-    def __init__(self, message: str, error_code: str = "AWS_COST_EXPLORER_ERROR") -> None:
+    def __init__(
+        self, message: str, error_code: str = "AWS_COST_EXPLORER_ERROR"
+    ) -> None:
         self.message = message
         self.error_code = error_code
         super().__init__(message)
@@ -29,14 +31,18 @@ class AWSThrottlingError(AWSCostExplorerError):
 class AWSPermissionsError(AWSCostExplorerError):
     """Raised when AWS credentials lack required permissions."""
 
-    def __init__(self, message: str = "Insufficient AWS permissions for Cost Explorer") -> None:
+    def __init__(
+        self, message: str = "Insufficient AWS permissions for Cost Explorer"
+    ) -> None:
         super().__init__(message, error_code="AWS_PERMISSIONS_ERROR")
 
 
 class AWSInvalidDateRangeError(AWSCostExplorerError):
     """Raised when date range is invalid for Cost Explorer API."""
 
-    def __init__(self, message: str = "Invalid date range for Cost Explorer query") -> None:
+    def __init__(
+        self, message: str = "Invalid date range for Cost Explorer query"
+    ) -> None:
         super().__init__(message, error_code="AWS_INVALID_DATE_RANGE")
 
 

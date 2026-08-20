@@ -70,7 +70,9 @@ class GCPBillingService:
 
         try:
             if creds_path:
-                credentials = service_account.Credentials.from_service_account_file(creds_path)
+                credentials = service_account.Credentials.from_service_account_file(
+                    creds_path
+                )
                 return bigquery.Client(
                     project=project,
                     credentials=credentials,
@@ -85,7 +87,9 @@ class GCPBillingService:
             raise GCPCredentialsError(f"Invalid GCP credentials file: {e}") from e
         except Exception as e:  # pragma: no cover - defensive catch-all
             logger.error("gcp_client_creation_failed", extra={"error": str(e)})
-            raise GCPCredentialsError(f"Failed to create GCP BigQuery client: {e}") from e
+            raise GCPCredentialsError(
+                f"Failed to create GCP BigQuery client: {e}"
+            ) from e
 
     def _ensure_client(self) -> BigQueryClient:
         """Lazy-initialise and cache the BigQuery client."""
@@ -98,16 +102,22 @@ class GCPBillingService:
     def _validate_date_range(self, start_date: date, end_date: date) -> None:
         """Validate the requested date range for a billing query."""
         if start_date > end_date:
-            raise GCPBillingAccountNotFoundError("start_date must be before or equal to end_date")
+            raise GCPBillingAccountNotFoundError(
+                "start_date must be before or equal to end_date"
+            )
         if start_date > date.today():
             raise GCPBillingAccountNotFoundError("start_date cannot be in the future")
 
     def _validate_config(self) -> None:
         """Validate that the GCP billing configuration is complete."""
         if not self._settings.gcp_billing_project:
-            raise GCPBillingAccountNotFoundError("GCP_BILLING_PROJECT is not configured")
+            raise GCPBillingAccountNotFoundError(
+                "GCP_BILLING_PROJECT is not configured"
+            )
         if not self._settings.gcp_billing_dataset:
-            raise GCPBillingAccountNotFoundError("GCP_BILLING_DATASET is not configured")
+            raise GCPBillingAccountNotFoundError(
+                "GCP_BILLING_DATASET is not configured"
+            )
         if not self._settings.gcp_billing_table:
             raise GCPBillingAccountNotFoundError("GCP_BILLING_TABLE is not configured")
 
@@ -178,10 +188,14 @@ class GCPBillingService:
             ) from e
         except NotFound as e:
             logger.error("gcp_billing_table_not_found", extra={"error": str(e)})
-            raise GCPBillingAccountNotFoundError("GCP billing export table not found") from e
+            raise GCPBillingAccountNotFoundError(
+                "GCP billing export table not found"
+            ) from e
         except BadRequest as e:
             logger.error("gcp_bigquery_bad_request", extra={"error": str(e)})
-            raise GCPBillingAccountNotFoundError(f"Invalid GCP BigQuery request: {e}") from e
+            raise GCPBillingAccountNotFoundError(
+                f"Invalid GCP BigQuery request: {e}"
+            ) from e
         except GoogleAPIError as e:
             logger.error("gcp_bigquery_error", extra={"error": str(e)})
             raise GCPBigQueryError(f"GCP BigQuery error: {e}") from e
@@ -216,7 +230,9 @@ class GCPBillingService:
                 currency = str(row["currency"])
 
             if cost > 0:
-                services.append({"service_name": str(service_name), "cost": round(cost, 2)})
+                services.append(
+                    {"service_name": str(service_name), "cost": round(cost, 2)}
+                )
                 total_cost += cost
 
         return {
@@ -304,7 +320,9 @@ class GCPBillingService:
                 "gcp_billing_unexpected_error",
                 extra={"error": str(e), "elapsed_ms": elapsed_ms},
             )
-            raise GCPBigQueryError(f"Unexpected error querying GCP billing export: {e}") from e
+            raise GCPBigQueryError(
+                f"Unexpected error querying GCP billing export: {e}"
+            ) from e
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.info(

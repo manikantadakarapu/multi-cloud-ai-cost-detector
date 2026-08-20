@@ -184,7 +184,9 @@ async def test_login_nonexistent_user(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_login_is_rate_limited(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_login_is_rate_limited(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Login requests are rate-limited per client IP."""
     monkeypatch.setattr(settings, "auth_rate_limit_per_minute", 2)
 
@@ -296,7 +298,9 @@ async def test_logout_already_revoked(client: AsyncClient) -> None:
     reg = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
     refresh_token = reg.json()["tokens"]["refresh_token"]
     await client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
-    response = await client.post("/api/v1/auth/logout", json={"refresh_token": refresh_token})
+    response = await client.post(
+        "/api/v1/auth/logout", json={"refresh_token": refresh_token}
+    )
     assert response.status_code == 200
 
 
@@ -316,7 +320,9 @@ async def test_logout_access_token_wrong_type(client: AsyncClient) -> None:
     """Logout rejects access tokens masquerading as refresh tokens."""
     reg = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
     access_token = reg.json()["tokens"]["access_token"]
-    response = await client.post("/api/v1/auth/logout", json={"refresh_token": access_token})
+    response = await client.post(
+        "/api/v1/auth/logout", json={"refresh_token": access_token}
+    )
     assert response.status_code == 401
     assert response.json()["error_code"] == "INVALID_TOKEN"
 

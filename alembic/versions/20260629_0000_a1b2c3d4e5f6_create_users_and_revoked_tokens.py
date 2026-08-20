@@ -30,11 +30,19 @@ def upgrade() -> None:
         sa.Column("email", sa.String(255), nullable=False),
         sa.Column("full_name", sa.String(255), nullable=False),
         sa.Column("password_hash", sa.String(255), nullable=True),
-        sa.Column("auth_provider", sa.String(50), nullable=False, server_default="local"),
+        sa.Column(
+            "auth_provider", sa.String(50), nullable=False, server_default="local"
+        ),
         sa.Column("provider_user_id", sa.String(255), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
-        sa.Column("is_verified", sa.Boolean(), nullable=False, server_default=sa.text("false")),
-        sa.Column("is_admin", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
+        sa.Column(
+            "is_verified", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
+        sa.Column(
+            "is_admin", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -67,7 +75,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_revoked_tokens")),
         sa.UniqueConstraint("jti", name=op.f("uq_revoked_tokens_jti")),
     )
-    op.create_index(op.f("ix_revoked_tokens_jti"), "revoked_tokens", ["jti"], unique=True)
+    op.create_index(
+        op.f("ix_revoked_tokens_jti"), "revoked_tokens", ["jti"], unique=True
+    )
     op.create_index(op.f("ix_revoked_tokens_user_id"), "revoked_tokens", ["user_id"])
 
 

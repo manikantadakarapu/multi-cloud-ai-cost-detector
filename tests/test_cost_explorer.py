@@ -38,11 +38,15 @@ class TestCostExplorerService:
                     "Groups": [
                         {
                             "Keys": ["AmazonEC2"],
-                            "Metrics": {"UnblendedCost": {"Amount": "100.50", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "100.50", "Unit": "USD"}
+                            },
                         },
                         {
                             "Keys": ["AmazonS3"],
-                            "Metrics": {"UnblendedCost": {"Amount": "50.25", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "50.25", "Unit": "USD"}
+                            },
                         },
                     ],
                     "Total": {"UnblendedCost": {"Amount": "150.75", "Unit": "USD"}},
@@ -146,7 +150,9 @@ class TestCostExplorerService:
                     "Groups": [
                         {
                             "Keys": ["AmazonEC2"],
-                            "Metrics": {"UnblendedCost": {"Amount": "100.00", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "100.00", "Unit": "USD"}
+                            },
                         },
                     ],
                 }
@@ -160,7 +166,9 @@ class TestCostExplorerService:
                     "Groups": [
                         {
                             "Keys": ["AmazonS3"],
-                            "Metrics": {"UnblendedCost": {"Amount": "50.00", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "50.00", "Unit": "USD"}
+                            },
                         },
                     ],
                 }
@@ -204,7 +212,9 @@ class TestCostExplorerService:
                     "Groups": [
                         {
                             "Keys": [],
-                            "Metrics": {"UnblendedCost": {"Amount": "10.00", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "10.00", "Unit": "USD"}
+                            },
                         },
                     ],
                 }
@@ -231,11 +241,15 @@ class TestCostExplorerService:
                     "Groups": [
                         {
                             "Keys": ["AmazonEC2"],
-                            "Metrics": {"UnblendedCost": {"Amount": "0.00", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "0.00", "Unit": "USD"}
+                            },
                         },
                         {
                             "Keys": ["AmazonS3"],
-                            "Metrics": {"UnblendedCost": {"Amount": "25.00", "Unit": "USD"}},
+                            "Metrics": {
+                                "UnblendedCost": {"Amount": "25.00", "Unit": "USD"}
+                            },
                         },
                     ],
                 }
