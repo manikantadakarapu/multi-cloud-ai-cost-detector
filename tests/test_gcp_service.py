@@ -94,9 +94,7 @@ class TestGCPBillingService:
             )
 
     @pytest.mark.asyncio
-    async def test_missing_project_config_raises(
-        self, service: GCPBillingService
-    ) -> None:
+    async def test_missing_project_config_raises(self, service: GCPBillingService) -> None:
         settings = _make_settings(GCP_BILLING_PROJECT=None)
         svc = GCPBillingService(settings)
         with pytest.raises(GCPBillingAccountNotFoundError):
@@ -107,9 +105,7 @@ class TestGCPBillingService:
             )
 
     @pytest.mark.asyncio
-    async def test_missing_dataset_config_raises(
-        self, service: GCPBillingService
-    ) -> None:
+    async def test_missing_dataset_config_raises(self, service: GCPBillingService) -> None:
         settings = _make_settings(GCP_BILLING_DATASET=None)
         svc = GCPBillingService(settings)
         with pytest.raises(GCPBillingAccountNotFoundError):
@@ -120,9 +116,7 @@ class TestGCPBillingService:
             )
 
     @pytest.mark.asyncio
-    async def test_missing_table_config_raises(
-        self, service: GCPBillingService
-    ) -> None:
+    async def test_missing_table_config_raises(self, service: GCPBillingService) -> None:
         settings = _make_settings(GCP_BILLING_TABLE=None)
         svc = GCPBillingService(settings)
         with pytest.raises(GCPBillingAccountNotFoundError):
@@ -151,9 +145,7 @@ class TestGCPBillingService:
             )
 
     @pytest.mark.asyncio
-    async def test_successful_query_normalizes_rows(
-        self, service: GCPBillingService
-    ) -> None:
+    async def test_successful_query_normalizes_rows(self, service: GCPBillingService) -> None:
         rows = [
             _row("Compute Engine", 123.456, "USD"),
             _row("Cloud Storage", 45.67, "USD"),
@@ -207,9 +199,7 @@ class TestGCPBillingService:
         param_names = [p.name for p in job_config.query_parameters]
         assert param_names == ["start_date", "end_date"]
         param_values = [p.value for p in job_config.query_parameters]
-        assert [
-            (v.isoformat() if hasattr(v, "isoformat") else v) for v in param_values
-        ] == [
+        assert [(v.isoformat() if hasattr(v, "isoformat") else v) for v in param_values] == [
             "2024-01-01",
             "2024-01-31",
         ]
@@ -285,9 +275,7 @@ class TestGCPBillingService:
                 )
 
     @pytest.mark.asyncio
-    async def test_generic_bigquery_error_translates(
-        self, service: GCPBillingService
-    ) -> None:
+    async def test_generic_bigquery_error_translates(self, service: GCPBillingService) -> None:
         with patch.object(billing_module, "bigquery") as mock_bq:
             mock_client = MagicMock()
             mock_bq.Client.return_value = mock_client
@@ -315,9 +303,7 @@ class TestGCPBillingService:
             mock_bq.Client.return_value = MagicMock()
             svc._build_client()
 
-        mock_sa.Credentials.from_service_account_file.assert_called_once_with(
-            "/path/to/creds.json"
-        )
+        mock_sa.Credentials.from_service_account_file.assert_called_once_with("/path/to/creds.json")
         mock_bq.Client.assert_called_once()
         call_kwargs = mock_bq.Client.call_args.kwargs
         assert "credentials" in call_kwargs
@@ -341,8 +327,6 @@ class TestGCPBillingService:
         svc = GCPBillingService(settings)
 
         with patch.object(billing_module, "service_account") as mock_sa:
-            mock_sa.Credentials.from_service_account_file.side_effect = ValueError(
-                "bad json"
-            )
+            mock_sa.Credentials.from_service_account_file.side_effect = ValueError("bad json")
             with pytest.raises(GCPCredentialsError):
                 svc._build_client()

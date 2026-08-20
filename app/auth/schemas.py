@@ -163,9 +163,7 @@ class UserRegisterResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     user: UserResponse = Field(..., description="The newly created user.")
-    tokens: TokenResponse = Field(
-        ..., description="Initial access + refresh token pair."
-    )
+    tokens: TokenResponse = Field(..., description="Initial access + refresh token pair.")
 
 
 class MessageResponse(BaseModel):

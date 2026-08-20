@@ -138,9 +138,7 @@ class TestAWSEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_get_costs_invalid_granularity(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_invalid_granularity(self, auth_client: AsyncClient) -> None:
         """Invalid granularity returns 422."""
         response = await auth_client.get(
             "/api/v1/aws/costs",
@@ -165,14 +163,10 @@ class TestAWSEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_get_costs_aws_credentials_error(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_get_costs_aws_credentials_error(self, auth_client: AsyncClient) -> None:
         """Provider credentials error returns 500."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(
-            side_effect=ProviderCredentialsError("No credentials")
-        )
+        mock_provider.get_costs = AsyncMock(side_effect=ProviderCredentialsError("No credentials"))
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -188,9 +182,7 @@ class TestAWSEndpoint:
     async def test_get_costs_aws_throttling(self, auth_client: AsyncClient) -> None:
         """Provider throttling error returns 429."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(
-            side_effect=ProviderThrottlingError("Rate limited")
-        )
+        mock_provider.get_costs = AsyncMock(side_effect=ProviderThrottlingError("Rate limited"))
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -206,9 +198,7 @@ class TestAWSEndpoint:
     async def test_get_costs_aws_permissions(self, auth_client: AsyncClient) -> None:
         """Provider permissions error returns 403."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(
-            side_effect=ProviderPermissionsError("Access denied")
-        )
+        mock_provider.get_costs = AsyncMock(side_effect=ProviderPermissionsError("Access denied"))
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -224,9 +214,7 @@ class TestAWSEndpoint:
     async def test_get_costs_invalid_date_range(self, auth_client: AsyncClient) -> None:
         """Provider invalid date range error returns 400."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(
-            side_effect=ProviderInvalidDateRangeError("Bad range")
-        )
+        mock_provider.get_costs = AsyncMock(side_effect=ProviderInvalidDateRangeError("Bad range"))
         _override_provider(mock_provider)
 
         response = await auth_client.get(
@@ -242,9 +230,7 @@ class TestAWSEndpoint:
     async def test_get_costs_aws_service_error(self, auth_client: AsyncClient) -> None:
         """Provider service error returns 502."""
         mock_provider = _build_mock_provider()
-        mock_provider.get_costs = AsyncMock(
-            side_effect=ProviderServiceError("Service error")
-        )
+        mock_provider.get_costs = AsyncMock(side_effect=ProviderServiceError("Service error"))
         _override_provider(mock_provider)
 
         response = await auth_client.get(

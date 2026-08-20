@@ -41,9 +41,7 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/azure", tags=["azure"])
 azure_provider_dependency = get_provider("azure")
-azure_cost_aggregator_dependency = get_cost_aggregator(
-    "azure", azure_provider_dependency
-)
+azure_cost_aggregator_dependency = get_cost_aggregator("azure", azure_provider_dependency)
 
 
 @router.get(

@@ -49,9 +49,7 @@ router = APIRouter(prefix="/costs", tags=["costs"])
     ),
     responses={
         200: {"description": "Cost data retrieved successfully."},
-        400: {
-            "description": "Invalid date range, unsupported provider, or bad parameters."
-        },
+        400: {"description": "Invalid date range, unsupported provider, or bad parameters."},
         401: {"description": "Not authenticated."},
         403: {"description": "Insufficient provider permissions."},
         422: {"description": "Validation error."},

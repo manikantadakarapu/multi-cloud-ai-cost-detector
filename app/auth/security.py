@@ -57,7 +57,5 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             hashed_password.encode("utf-8"),
         )
     except (ValueError, TypeError):
-        logger.warning(
-            "password_verification_failed", extra={"reason": "invalid_hash_format"}
-        )
+        logger.warning("password_verification_failed", extra={"reason": "invalid_hash_format"})
         return False

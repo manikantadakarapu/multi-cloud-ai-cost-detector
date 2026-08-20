@@ -86,9 +86,7 @@ class TestUnifiedCostsEndpoint:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    async def test_aws_returns_normalized_response(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_aws_returns_normalized_response(self, auth_client: AsyncClient) -> None:
         """The ``aws`` provider returns a :class:`CostResponse`."""
         response = await auth_client.get(
             "/api/v1/costs/",
@@ -105,9 +103,7 @@ class TestUnifiedCostsEndpoint:
         assert isinstance(data["services"], list)
 
     @pytest.mark.asyncio
-    async def test_azure_returns_normalized_response(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_azure_returns_normalized_response(self, auth_client: AsyncClient) -> None:
         """The ``azure`` provider returns a :class:`CostResponse`."""
         response = await auth_client.get(
             "/api/v1/costs/",
@@ -123,9 +119,7 @@ class TestUnifiedCostsEndpoint:
         assert data["total_cost"] == 100.0
 
     @pytest.mark.asyncio
-    async def test_gcp_returns_normalized_response(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_gcp_returns_normalized_response(self, auth_client: AsyncClient) -> None:
         """The ``gcp`` provider returns a :class:`CostResponse`."""
         response = await auth_client.get(
             "/api/v1/costs/",
@@ -141,9 +135,7 @@ class TestUnifiedCostsEndpoint:
         assert data["total_cost"] == 100.0
 
     @pytest.mark.asyncio
-    async def test_unsupported_provider_returns_400(
-        self, auth_client: AsyncClient
-    ) -> None:
+    async def test_unsupported_provider_returns_400(self, auth_client: AsyncClient) -> None:
         """An unsupported provider returns 400 with ``X-Error-Code`` header."""
         response = await auth_client.get(
             "/api/v1/costs/",

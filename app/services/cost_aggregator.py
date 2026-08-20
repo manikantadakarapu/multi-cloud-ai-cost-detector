@@ -58,11 +58,7 @@ class CostAggregatorService:
     def _cache_scope(self) -> str:
         """Return the provider/account identifier used in cache keys."""
         if self._provider_name == "azure":
-            return (
-                settings.azure_subscription_id
-                or settings.azure_tenant_id
-                or "azure-default"
-            )
+            return settings.azure_subscription_id or settings.azure_tenant_id or "azure-default"
         if self._provider_name == "aws":
             return settings.aws_profile or settings.aws_default_region or "aws-default"
         return getattr(self._provider, "cache_scope", None) or self._provider_name
@@ -105,9 +101,7 @@ class CostAggregatorService:
         )
 
         if cache is not None:
-            await cache.set_json(
-                cache_key, result, ttl_seconds=settings.cache_ttl_seconds
-            )
+            await cache.set_json(cache_key, result, ttl_seconds=settings.cache_ttl_seconds)
 
         return result
 

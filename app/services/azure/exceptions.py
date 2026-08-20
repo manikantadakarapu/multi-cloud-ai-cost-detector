@@ -6,9 +6,7 @@ from __future__ import annotations
 class AzureCostManagementError(Exception):
     """Base exception for Azure Cost Management errors."""
 
-    def __init__(
-        self, message: str, error_code: str = "AZURE_COST_MANAGEMENT_ERROR"
-    ) -> None:
+    def __init__(self, message: str, error_code: str = "AZURE_COST_MANAGEMENT_ERROR") -> None:
         self.message = message
         self.error_code = error_code
         super().__init__(message)
@@ -31,9 +29,7 @@ class AzureThrottlingError(AzureCostManagementError):
 class AzurePermissionsError(AzureCostManagementError):
     """Raised when credentials lack required permissions."""
 
-    def __init__(
-        self, message: str = "Insufficient Azure permissions for Cost Management"
-    ) -> None:
+    def __init__(self, message: str = "Insufficient Azure permissions for Cost Management") -> None:
         super().__init__(message, error_code="AZURE_PERMISSIONS_ERROR")
 
 

@@ -46,9 +46,7 @@ class TestAzureProviderRegistration:
 class TestAzureProviderMetadata:
     def test_provider_name(self) -> None:
         """``provider_name`` returns ``"azure"``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service_cls.return_value = MagicMock()
             provider = AzureCloudProvider()
         assert provider.provider_name() == "azure"
@@ -57,9 +55,7 @@ class TestAzureProviderMetadata:
         """``AzureCloudProvider`` is a concrete subclass of :class:`CloudProvider`."""
         from app.providers.base import CloudProvider
 
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service_cls.return_value = MagicMock()
             provider = AzureCloudProvider()
         assert isinstance(provider, CloudProvider)
@@ -68,9 +64,7 @@ class TestAzureProviderMetadata:
 class TestAzureProviderAuthenticate:
     def test_authenticate_calls_ensure_credential(self) -> None:
         """``authenticate`` delegates to the service's credential bootstrap."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
@@ -80,13 +74,9 @@ class TestAzureProviderAuthenticate:
 
     def test_authenticate_propagates_credential_errors(self) -> None:
         """``authenticate`` does not swallow credential errors."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service._ensure_credential.side_effect = AzureCredentialsError(
-                "missing"
-            )
+            mock_service._ensure_credential.side_effect = AzureCredentialsError("missing")
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
             with pytest.raises(AzureCredentialsError):
@@ -96,9 +86,7 @@ class TestAzureProviderAuthenticate:
 class TestAzureProviderValidateCredentials:
     def test_validate_credentials_true_when_authenticate_succeeds(self) -> None:
         """Successful ``authenticate`` yields ``True``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_credential.return_value = None
             mock_service_cls.return_value = mock_service
@@ -107,35 +95,25 @@ class TestAzureProviderValidateCredentials:
 
     def test_validate_credentials_false_on_azure_credentials_error(self) -> None:
         """``AzureCredentialsError`` is swallowed and yields ``False``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service._ensure_credential.side_effect = AzureCredentialsError(
-                "missing"
-            )
+            mock_service._ensure_credential.side_effect = AzureCredentialsError("missing")
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
         assert provider.validate_credentials() is False
 
     def test_validate_credentials_false_on_client_authentication_error(self) -> None:
         """``ClientAuthenticationError`` is swallowed and yields ``False``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service._ensure_credential.side_effect = ClientAuthenticationError(
-                "bad token"
-            )
+            mock_service._ensure_credential.side_effect = ClientAuthenticationError("bad token")
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
         assert provider.validate_credentials() is False
 
     def test_validate_credentials_propagates_other_errors(self) -> None:
         """Non-credential exceptions propagate unchanged."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service._ensure_credential.side_effect = RuntimeError("boom")
             mock_service_cls.return_value = mock_service
@@ -162,9 +140,7 @@ class TestAzureProviderGetCosts:
                 {"service_name": "Compute", "cost": 50.00},
             ],
         }
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(return_value=raw)
             mock_service_cls.return_value = mock_service
@@ -204,9 +180,7 @@ class TestAzureProviderGetCosts:
             },
             "services": [],
         }
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(return_value=raw)
             mock_service_cls.return_value = mock_service
@@ -227,13 +201,9 @@ class TestAzureProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_azure_credentials_error(self) -> None:
         """``AzureCredentialsError`` becomes ``ProviderCredentialsError``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AzureCredentialsError("missing")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AzureCredentialsError("missing"))
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
             with pytest.raises(ProviderCredentialsError):
@@ -242,13 +212,9 @@ class TestAzureProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_throttling_error(self) -> None:
         """``AzureThrottlingError`` becomes ``ProviderThrottlingError``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AzureThrottlingError("slow down")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AzureThrottlingError("slow down"))
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
             with pytest.raises(ProviderThrottlingError):
@@ -257,13 +223,9 @@ class TestAzureProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_permissions_error(self) -> None:
         """``AzurePermissionsError`` becomes ``ProviderPermissionsError``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
-            mock_service.get_costs = AsyncMock(
-                side_effect=AzurePermissionsError("denied")
-            )
+            mock_service.get_costs = AsyncMock(side_effect=AzurePermissionsError("denied"))
             mock_service_cls.return_value = mock_service
             provider = AzureCloudProvider()
             with pytest.raises(ProviderPermissionsError):
@@ -272,9 +234,7 @@ class TestAzureProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_invalid_subscription_error(self) -> None:
         """``AzureInvalidSubscriptionError`` becomes ``ProviderInvalidDateRangeError``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(
                 side_effect=AzureInvalidSubscriptionError("no subscription")
@@ -287,9 +247,7 @@ class TestAzureProviderGetCosts:
     @pytest.mark.asyncio
     async def test_get_costs_translates_service_error(self) -> None:
         """``AzureServiceError`` becomes ``ProviderServiceError``."""
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(side_effect=AzureServiceError("boom"))
             mock_service_cls.return_value = mock_service
@@ -301,9 +259,7 @@ class TestAzureProviderGetCosts:
     async def test_get_costs_translates_unexpected_azure_error(self) -> None:
         """Generic ``AzureError`` becomes ``ProviderServiceError``."""
         azure_error = AzureError("unexpected azure failure")
-        with patch(
-            "app.providers.azure.provider.AzureCostManagementService"
-        ) as mock_service_cls:
+        with patch("app.providers.azure.provider.AzureCostManagementService") as mock_service_cls:
             mock_service = MagicMock()
             mock_service.get_costs = AsyncMock(side_effect=azure_error)
             mock_service_cls.return_value = mock_service
