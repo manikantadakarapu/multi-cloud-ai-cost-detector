@@ -183,6 +183,30 @@ async def test_login_nonexistent_user(client: AsyncClient) -> None:
     assert body["error_code"] == "INVALID_CREDENTIALS"
 
 
+@pytest.mark.asyncio
+async def test_login_is_rate_limited(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Login requests are rate-limited per client IP."""
+    monkeypatch.setattr(settings, "auth_rate_limit_per_minute", 2)
+
+    await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+
+    for _ in range(2):
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "newuser@example.com", "password": "Wr0ngP@ss!"},
+        )
+        assert response.status_code == 401
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "newuser@example.com", "password": "Wr0ngP@ss!"},
+    )
+    assert response.status_code == 429
+    assert response.json()["detail"] == "Rate limit exceeded"
+
+
 # ---------------------------------------------------------------------------
 # Refresh token tests
 # ---------------------------------------------------------------------------
@@ -282,12 +306,25 @@ async def test_logout_already_revoked(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_logout_invalid_token(client: AsyncClient) -> None:
-    """Logout is stateless: any token string is accepted (returns 200)."""
+    """Logout rejects malformed refresh tokens."""
     response = await client.post(
         "/api/v1/auth/logout",
         json={"refresh_token": "garbage-token"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "INVALID_TOKEN"
+
+
+@pytest.mark.asyncio
+async def test_logout_access_token_wrong_type(client: AsyncClient) -> None:
+    """Logout rejects access tokens masquerading as refresh tokens."""
+    reg = await client.post("/api/v1/auth/register", json=REGISTER_PAYLOAD)
+    access_token = reg.json()["tokens"]["access_token"]
+    response = await client.post(
+        "/api/v1/auth/logout", json={"refresh_token": access_token}
+    )
+    assert response.status_code == 401
+    assert response.json()["error_code"] == "INVALID_TOKEN"
 
 
 # ---------------------------------------------------------------------------

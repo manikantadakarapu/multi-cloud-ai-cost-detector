@@ -26,6 +26,16 @@ def enforce_cost_rate_limit(func: Callable[..., Any]) -> Callable[..., Any]:
     return limiter.limit(cost_rate_limit)(func)
 
 
+def auth_rate_limit() -> str:
+    """Return the configured per-client limit for an auth endpoint."""
+    return f"{settings.auth_rate_limit_per_minute}/minute"
+
+
+def enforce_auth_rate_limit(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Apply the configured SlowAPI limit to an auth route handler."""
+    return limiter.limit(auth_rate_limit)(func)
+
+
 def reset_rate_limits() -> None:
     """Clear limiter state to isolate test cases."""
     limiter._storage.reset()  # noqa: SLF001 - SlowAPI exposes no public reset API.

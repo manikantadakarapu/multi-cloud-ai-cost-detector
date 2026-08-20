@@ -12,6 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.0 authentication and API security hardening:
+  - Per-client SlowAPI rate limiting on registration, login, refresh, and
+    logout using `AUTH_RATE_LIMIT_PER_MINUTE`.
+  - JWT refresh-token validation during logout, including expiry, token type,
+    user existence, and active-account checks.
+  - Tests covering authentication rate limits and invalid logout tokens.
+
+- Sprint 1.0 documentation updates describing JWT Bearer protection on all
+  cost endpoints and the reusable authentication dependencies.
+
+- GCP Billing provider integration with normalized responses, provider
+  registration, dedicated cost endpoint, and service/provider test coverage.
+
+- Unified multi-cloud cost aggregation through `GET /api/v1/costs`, including
+  provider dispatch, shared response schemas, unsupported-provider errors, and
+  integration tests.
+
 - Sprint 0.7 provider-independent cost aggregation:
   - Redis-backed normalized cost-response cache with configurable
     `REDIS_URL` and `CACHE_TTL_SECONDS`, graceful cache-failure fallback,
@@ -303,7 +320,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   diagnostic script so contributors do not paste credentials into source
   control during debugging.
 
-[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/compare/v0.9.0...HEAD
 [0.4.1]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.4.1
 [0.4.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.4.0
 [0.3.0]: https://github.com/manikantadakarapu/multi-cloud-ai-cost-detective/releases/tag/v0.3.0
