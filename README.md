@@ -1,4 +1,4 @@
-# Multi-Cloud AI Cost Detective
+# Multi-Cloud AI Cost Detector
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
@@ -17,7 +17,7 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 1.0 — Authentication & API Security complete.
+> **Status:** Sprint 1.1 — Cost Analytics & Intelligence Foundation complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
 > aggregation, Redis caching/rate limiting, and GCP support are complete.
@@ -107,6 +107,10 @@ MCAICD/
 - ✅ Local JWT authentication (register, login, refresh, logout, `/me`)
 - ✅ JWT Bearer protection on all cost endpoints (`/api/v1/aws/costs`, `/api/v1/azure/costs`, `/api/v1/gcp/costs`, `/api/v1/costs`)
 - ✅ Provider-agnostic auth dependencies (`get_current_user`, `get_current_active_user`) reusable by any future endpoint
+- ✅ Deterministic analytics foundation: summaries, provider/service breakdowns,
+  daily trends, period comparisons, and top cost drivers
+- ✅ Currency-aware analytics with Decimal monetary calculations and explicit Pydantic response schemas
+- ✅ Analytics endpoints reuse normalized provider responses and the existing Redis cache
 
 ---
 
@@ -124,6 +128,7 @@ MCAICD/
 | 0.8 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection verified on all endpoints, quality gates pass, documentation updated. |
+| 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — normalized daily costs, authenticated analytics endpoints, comparisons, cost drivers, currency validation, and test coverage. |
 
 ---
 
@@ -198,6 +203,12 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/azure/costs     | Retrieve Azure costs grouped by service (requires Azure credentials) |
 | http://localhost:8000/api/v1/gcp/costs       | Retrieve GCP costs grouped by service (requires GCP credentials) |
 | http://localhost:8000/api/v1/costs           | Unified endpoint — retrieve costs from any provider (aws, azure, gcp) |
+| http://localhost:8000/api/v1/analytics/summary | Authenticated multi-cloud cost summary |
+| http://localhost:8000/api/v1/analytics/providers | Provider-level cost breakdown |
+| http://localhost:8000/api/v1/analytics/services | Top provider/service cost breakdown |
+| http://localhost:8000/api/v1/analytics/trends | Daily cost trend with zero-filled dates |
+| http://localhost:8000/api/v1/analytics/compare | Current vs previous period comparison |
+| http://localhost:8000/api/v1/analytics/drivers | Largest provider/service cost changes |
 
 ---
 

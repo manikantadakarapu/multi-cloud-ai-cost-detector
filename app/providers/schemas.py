@@ -8,6 +8,8 @@ the application can work against a single, stable contract.
 
 from __future__ import annotations
 
+from datetime import date as date_type
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -26,6 +28,19 @@ class ServiceCost(BaseModel):
         ge=0,
         description="Cost in the response currency.",
         examples=[100.50],
+    )
+
+
+class DailyCost(BaseModel):
+    """Normalized cost total for one calendar day."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    date: date_type = Field(..., description="Calendar day represented by this cost.")
+    cost: float = Field(
+        ...,
+        ge=0,
+        description="Cost for the day in the response currency.",
     )
 
 
@@ -64,4 +79,8 @@ class CostResponse(BaseModel):
     services: list[ServiceCost] = Field(
         default_factory=list,
         description="Per-service cost breakdown.",
+    )
+    daily_costs: list[DailyCost] = Field(
+        default_factory=list,
+        description="Daily totals when the provider supplies time-bucketed data.",
     )

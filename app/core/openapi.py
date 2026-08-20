@@ -35,6 +35,13 @@ OPENAPI_TAGS: list[dict[str, str]] = [
             "token refresh, logout, and user profile."
         ),
     },
+    {
+        "name": "analytics",
+        "description": (
+            "Authenticated cost summaries, provider/service breakdowns, "
+            "daily trends, comparisons, and deterministic cost drivers."
+        ),
+    },
 ]
 
 

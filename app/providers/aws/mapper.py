@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from app.providers.schemas import CostResponse, ServiceCost
+from app.providers.schemas import CostResponse, DailyCost, ServiceCost
 
 
 class AWSMapper:
@@ -50,6 +50,10 @@ class AWSMapper:
             )
             for item in services_raw
         ]
+        daily_costs = [
+            DailyCost(date=item["date"], cost=float(item["cost"]))
+            for item in raw.get("daily_costs", [])
+        ]
 
         return CostResponse(
             provider=str(raw.get("provider", "aws")),
@@ -61,4 +65,5 @@ class AWSMapper:
                 "granularity": str(date_range.get("granularity", granularity)),
             },
             services=services,
+            daily_costs=daily_costs,
         )
