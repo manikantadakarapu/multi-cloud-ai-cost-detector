@@ -132,6 +132,7 @@ class CostExplorerService:
     def _normalize_response(self, response: dict[str, Any]) -> dict[str, Any]:
         """Normalize AWS Cost Explorer response to unified schema."""
         services: list[dict[str, Any]] = []
+        daily_totals: dict[str, float] = {}
         total_cost = 0.0
         currency = "USD"
 
@@ -147,6 +148,11 @@ class CostExplorerService:
                 if cost > 0:
                     services.append({"service_name": service_name, "cost": cost})
                     total_cost += cost
+                    period_start = time_period.get("TimePeriod", {}).get("Start")
+                    if period_start:
+                        daily_totals[period_start] = (
+                            daily_totals.get(period_start, 0.0) + cost
+                        )
 
         services.sort(key=lambda x: x["cost"], reverse=True)
 
@@ -155,6 +161,10 @@ class CostExplorerService:
             "currency": currency,
             "total_cost": round(total_cost, 2),
             "services": services,
+            "daily_costs": [
+                {"date": period, "cost": round(cost, 2)}
+                for period, cost in sorted(daily_totals.items())
+            ],
         }
 
     async def get_costs(

@@ -11,7 +11,7 @@
 > hiring managers who need to understand where the project is headed and how
 > the near-term work ladders up to the long-term vision.
 >
-> **Last Updated:** 2026-07-12 (Sprint 1.0)
+> **Last Updated:** 2026-08-20 (Sprint 1.1)
 >
 > **Status legend:** ✅ Complete · 🚧 In Progress · ⏳ Planned · 🔭 Future
 
@@ -121,6 +121,24 @@ implementation is documented.
 
 ---
 
+### Sprint 1.1 — Cost Analytics & Intelligence Foundation ✅ Complete
+
+**Focus:** Build deterministic, currency-aware analytics over normalized
+multi-cloud cost responses without introducing premature analytics persistence.
+
+| Deliverable | Status |
+| ----------- | ------ |
+| Daily cost points in the shared provider contract | ✅ Delivered |
+| Authenticated summary, breakdown, trend, comparison, and driver APIs | ✅ Delivered |
+| Decimal arithmetic and mixed-currency validation | ✅ Delivered |
+| Analytics tests, ADR, architecture, README, and changelog updates | ✅ Delivered |
+
+**Exit criteria:** analytics endpoints are authenticated, responses use
+explicit schemas, provider calls are reused through the existing cache path,
+and tests plus quality gates pass.
+
+---
+
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in
@@ -158,6 +176,7 @@ Highlights:
 | 0.8 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection, auth rate limiting, logout validation, tests, and documentation. |
+| 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — daily normalization, analytics APIs, Decimal calculations, currency validation, cost drivers, and documentation. |
 
 ---
 

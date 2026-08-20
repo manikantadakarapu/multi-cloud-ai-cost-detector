@@ -131,7 +131,12 @@ class AzureCostManagementService:
                 },
                 "grouping": [
                     {"type": "Dimension", "name": "ServiceName"},
-                ],
+                ]
+                + (
+                    [{"type": "Dimension", "name": "UsageDate"}]
+                    if granularity == self.GRANULARITY_DAILY
+                    else []
+                ),
             },
         }
 
@@ -240,6 +245,7 @@ class AzureCostManagementService:
         service_idx: int | None = None
         cost_idx: int | None = None
         currency_idx: int | None = None
+        date_idx: int | None = None
 
         for index, column in enumerate(columns):
             name = (getattr(column, "name", "") or "").lower()
@@ -249,8 +255,11 @@ class AzureCostManagementService:
                 cost_idx = index
             elif name == "currency" and currency_idx is None:
                 currency_idx = index
+            elif name in {"usagedate", "date"} and date_idx is None:
+                date_idx = index
 
         services: dict[str, float] = {}
+        daily_totals: dict[str, float] = {}
         total_cost = 0.0
         currency = "USD"
 
@@ -279,6 +288,9 @@ class AzureCostManagementService:
             if cost > 0:
                 services[service_name] = services.get(service_name, 0.0) + cost
                 total_cost += cost
+                if date_idx is not None and date_idx < len(row) and row[date_idx]:
+                    day = str(row[date_idx])[:10]
+                    daily_totals[day] = daily_totals.get(day, 0.0) + cost
 
         sorted_services = sorted(
             services.items(), key=lambda item: item[1], reverse=True
@@ -296,5 +308,9 @@ class AzureCostManagementService:
             "services": [
                 {"service_name": name, "cost": round(cost, 2)}
                 for name, cost in sorted_services
+            ],
+            "daily_costs": [
+                {"date": day, "cost": round(cost, 2)}
+                for day, cost in sorted(daily_totals.items())
             ],
         }

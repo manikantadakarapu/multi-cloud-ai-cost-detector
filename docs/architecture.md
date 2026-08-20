@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-07-12 (Sprint 1.0)
+> **Last Updated:** 2026-08-20 (Sprint 1.1)
 
 ---
 
@@ -52,10 +52,13 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 1.0):** the foundation layers are live — application
+**Current state (Sprint 1.1):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
 health probe, configuration, cloud provider integrations, unified cost
-aggregation, Redis caching, rate limiting, and JWT Bearer authentication.
+aggregation, Redis caching, rate limiting, JWT Bearer authentication, and
+deterministic cost analytics. The analytics layer remains intentionally
+descriptive; anomaly detection, forecasting, and AI recommendations are
+future work.
 The AI engine remains planned for Sprint 0.5; its seams are described below
 as forward-looking contracts.
 
@@ -222,7 +225,10 @@ The shapes that flow out of `get_costs` are defined in
 * `CostResponse` — the top-level payload returned by the route. Fields:
   `provider` (the short identifier), `currency` (defaults to `"USD"`),
   `total_cost`, `date_range` (a `dict[str, str]` carrying `start`,
-  `end`, and `granularity`), and `services` (a list of `ServiceCost`).
+  `end`, and `granularity`), `services` (a list of `ServiceCost`), and
+  optional `daily_costs` points. `DailyCost` contains an ISO date and a
+  non-negative cost. Providers populate daily points when requested with
+  `DAILY` granularity so analytics does not need repeated provider calls.
 * `ServiceCost` — a single per-service row: `service_name` (str) and
   `cost` (float, `>= 0`).
 
@@ -455,7 +461,7 @@ except (AWSServiceError, ProviderServiceError) as e:
 Once the AWS service layer is fully retired, the AWS-specific `except`
 clauses can be removed and the route can drop the dual import.
 
-### Extension guide: adding GCP
+### Extension guide: adding a provider
 
 Adding a new cloud vendor is a four-step, additive change. Each step is
 localised to a new directory under `app/providers/` plus a single new
@@ -465,8 +471,8 @@ route file.
    with a concrete subclass of `CloudProvider`:
 
    ```python
-   class AzureCloudProvider(CloudProvider):
-       def provider_name(self) -> str: return "azure"
+   class NewCloudProvider(CloudProvider):
+       def provider_name(self) -> str: return "newcloud"
        def authenticate(self) -> None: ...
        def validate_credentials(self) -> bool: ...
        async def get_costs(self, start_date, end_date, granularity) -> CostResponse: ...
@@ -487,13 +493,13 @@ route file.
 
    ```python
    from app.providers.registry import register_provider
-   from app.providers.gcp.provider import GCPCloudProvider
+   from app.providers.newcloud.provider import NewCloudProvider
 
-   register_provider("gcp", lambda: GCPCloudProvider())
+   register_provider("newcloud", lambda: NewCloudProvider())
    ```
 
    Because `app/providers/__init__.py` re-exports the public API, the
-   GCP sub-package should be imported there (or its `__init__` should
+   new provider sub-package should be imported there (or its `__init__` should
    be picked up transitively) so registration runs at process start.
 
 4. **Add a route.** Create `app/api/routes/<name>.py` with a FastAPI
@@ -524,8 +530,8 @@ abstraction has delivered across sprints:
   `app/services/azure/exceptions.py`, the Azure request schema, the
   `GET /api/v1/azure/costs` route, and the `"azure"` entry in the
   registry.
-* **GCP** (`GCPCloudProvider`) remains the next vendor to land and will
-  follow the extension guide above in a later sprint.
+* **GCP** (`GCPCloudProvider`) is now part of the live three-provider set.
+  The extension guide applies to future providers.
 
 ---
 
@@ -545,13 +551,23 @@ clients.
 | Health route | `app/api/routes/health.py` | Readiness probe with live DB and Redis checks. Returns 503 when either dependency is down. |
 | Root route | `app/api/routes/root.py` | Discovery payload: name, version, docs, health links. |
 | Dependencies | `app/api/deps.py` | Request-scoped session (`get_db_session`) and session-factory (`get_session_factory`) for graceful degradation. |
-| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService` and `CostAggregatorService`. |
+| Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService`, `CostAggregatorService`, and `AnalyticsService`. |
 | OpenAPI metadata | `app/core/openapi.py` | Title, description, tags, contact, licence. |
 
 ### Cost Query Pipeline
 
 Cost retrieval now flows through a provider-independent aggregation service
 instead of route handlers talking to providers directly.
+
+Analytics routes use the same aggregator with `DAILY` granularity. One
+normalized response is loaded per selected provider using `asyncio.gather`;
+the existing provider response cache is therefore reused and provider calls
+are not repeated for each metric. Analytics calculations use `Decimal`, reject
+mixed currencies rather than silently converting them, and fill missing dates
+with zeroes for stable trend output. Analytics results are not persisted in a
+new database table because they are deterministic projections of live provider
+responses; persistence can be introduced later if reporting requirements need
+historical snapshots.
 
 ```mermaid
 graph LR

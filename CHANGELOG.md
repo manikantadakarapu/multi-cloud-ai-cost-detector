@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the **Multi-Cloud AI Cost Detective** project are
+All notable changes to the **Multi-Cloud AI Cost Detector** project are
 documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Sprint 1.1 Cost Analytics & Intelligence Foundation:
+  - Normalized `daily_costs` points in the shared `CostResponse` contract for AWS, Azure, and GCP.
+  - Authenticated `/api/v1/analytics/{summary,providers,services,trends,compare,drivers}` endpoints.
+  - Decimal-based, currency-aware summaries, service/provider breakdowns, zero-filled daily trends, period comparisons, and deterministic cost-driver ranking.
+  - Analytics tests covering calculations, missing days, zero baselines, currency mismatch, authentication, and explicit response schemas.
 
 - Sprint 1.0 authentication and API security hardening:
   - Per-client SlowAPI rate limiting on registration, login, refresh, and

@@ -154,14 +154,24 @@ class GCPBillingService:
             ScalarQueryParameter("start_date", "DATE", start_date.isoformat()),
             ScalarQueryParameter("end_date", "DATE", end_date.isoformat()),
         ]
+        date_dimension = (
+            ", DATE(usage_start_time) AS usage_date "
+            if granularity == self.GRANULARITY_DAILY
+            else " "
+        )
+        group_dimensions = (
+            "GROUP BY service_name, usage_date "
+            if granularity == self.GRANULARITY_DAILY
+            else "GROUP BY service_name "
+        )
         return (
-            "SELECT service.description AS service_name, "
-            "SUM(cost) AS total_cost, "
+            "SELECT service.description AS service_name"
+            f"{date_dimension}, SUM(cost) AS total_cost, "
             "ANY_VALUE(currency) AS currency "
             f"FROM {table} "  # nosec B608 — operator-configured table id, not user input
             "WHERE DATE(usage_start_time) >= @start_date "
             "AND DATE(usage_start_time) <= @end_date "
-            "GROUP BY service_name "
+            f"{group_dimensions}"
             "ORDER BY total_cost DESC"
         ), params
 
@@ -216,6 +226,7 @@ class GCPBillingService:
     ) -> dict[str, Any]:
         """Normalize BigQuery rows into the unified cost response shape."""
         services: list[dict[str, Any]] = []
+        daily_totals: dict[str, float] = {}
         total_cost = 0.0
         currency = "USD"
 
@@ -234,6 +245,10 @@ class GCPBillingService:
                     {"service_name": str(service_name), "cost": round(cost, 2)}
                 )
                 total_cost += cost
+                usage_date = row.get("usage_date")
+                if usage_date:
+                    day = str(usage_date)[:10]
+                    daily_totals[day] = daily_totals.get(day, 0.0) + cost
 
         return {
             "provider": "gcp",
@@ -245,6 +260,10 @@ class GCPBillingService:
                 "granularity": granularity,
             },
             "services": services,
+            "daily_costs": [
+                {"date": day, "cost": round(cost, 2)}
+                for day, cost in sorted(daily_totals.items())
+            ],
         }
 
     # -- Public API -----------------------------------------------------------
