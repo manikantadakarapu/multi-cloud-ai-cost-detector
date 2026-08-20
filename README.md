@@ -20,8 +20,8 @@ teams can act on directly.
 > **Status:** Sprint 1.0 — Authentication & API Security complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
-> aggregation (Sprint 0.7), and Redis caching/rate limiting (Sprint 0.8)
-> are complete. All cost endpoints are now JWT-protected.
+> aggregation, Redis caching/rate limiting, and GCP support are complete.
+> All cost endpoints are now JWT-protected.
 
 ## Table of Contents
 
@@ -85,9 +85,8 @@ MCAICD/
 | Linting / format   | Ruff                                          |
 | Testing            | pytest, pytest-asyncio, httpx                 |
 | Containerisation   | Docker, Docker Compose                        |
-| CI (future)        | GitHub Actions                                |
+| CI                 | GitHub Actions                                |
 | Infrastructure     | Terraform *(future)*                          |
-| Caching            | Redis *(future)*                              |
 
 ---
 
@@ -802,10 +801,9 @@ engineering organisation and reflects the current Sprint 0.2 progress.
 
 ## Future Improvements
 
-- GitHub Actions CI pipeline with automated testing and linting
 - Dockerfile for the application itself (Sprint 0.9)
 - Kubernetes manifests and Helm chart (Sprint 0.9)
 - Terraform infrastructure-as-code for AWS deployment (Sprint 0.9)
-- Redis-backed caching layer for provider API responses
-- Rate limiting and API key authentication (Sprint 0.3)
+- Azure AD (OIDC), Google Login (OAuth 2.0), and role-based access control
+- Login lockout enforcement using `AUTH_MAX_LOGIN_ATTEMPTS`
 - Cost anomaly detection models and the AI recommendation engine (Sprint 0.5)

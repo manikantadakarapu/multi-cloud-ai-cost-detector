@@ -11,7 +11,7 @@
 > hiring managers who need to understand where the project is headed and how
 > the near-term work ladders up to the long-term vision.
 >
-> **Last Updated:** 2026-06-28 (Sprint 0.2)
+> **Last Updated:** 2026-07-12 (Sprint 1.0)
 >
 > **Status legend:** ✅ Complete · 🚧 In Progress · ⏳ Planned · 🔭 Future
 
@@ -79,21 +79,20 @@ gantt
 
     section Foundation
     Sprint 0.1 Backend Foundation       :done, s01, 2026-06-14, 14d
-    Sprint 0.2 Docs & Architecture      :active, s02, 2026-06-28, 14d
-    Sprint 0.3 Authentication           :s03, after s02, 14d
+    Sprint 0.2 Docs & Architecture      :done, s02, 2026-06-28, 14d
+    Sprint 0.3 Authentication           :done, s03, after s02, 14d
 
     section Core Platform
-    Sprint 0.4 Cloud Integrations       :s04, after s03, 28d
+    Sprint 0.4-0.7 Cloud & Cost APIs     :done, s04, after s03, 28d
     Sprint 0.5 AI Analysis Engine       :s05, after s04, 14d
     Sprint 0.6 REST APIs                :s06, after s05, 14d
 
     section Surface & Ops
-    Sprint 0.7 Frontend Dashboard       :s07, after s06, 21d
-    Sprint 0.8 Real-time Monitoring     :s08, after s07, 14d
-    Sprint 0.9 Deployment               :s09, after s08, 14d
+    Sprint 0.8 Frontend Dashboard       :s07, after s06, 21d
+    Sprint 0.9 Deployment               :s09, after s07, 14d
 
     section Release
-    Sprint 1.0 Production Release       :milestone, after s09, 0d
+    Sprint 1.0 API Security              :done, s10, after s04, 14d
 ```
 
 > Dates are indicative and adjusted at sprint planning. The graph reflects
@@ -103,24 +102,22 @@ gantt
 
 ## Current Sprint Status
 
-### Sprint 0.2 — Engineering Documentation & Architecture 🚧
+### Sprint 1.0 — Authentication & API Security ✅ Complete
 
-**Focus:** Production-quality documentation, architecture record trail, and
-engineering workflow definition. No new application code is introduced; the
-sprint hardens the foundation laid in 0.1 so the project is reviewable and
-contributor-ready before authentication work begins.
+**Focus:** Protect the complete cost API surface with local JWT Bearer
+authentication and harden the authentication endpoints.
 
 | Deliverable | Status |
 | ----------- | ------ |
-| `docs/architecture.md` | ✅ Delivered |
-| `docs/project-roadmap.md` | ✅ Delivered |
-| `docs/development-workflow.md` | ✅ Delivered |
-| ADR-0001 through ADR-0005 | ✅ Delivered |
-| README "Project Documentation" section | ✅ Delivered |
+| JWT protection on all cost endpoints | ✅ Delivered |
+| Auth endpoint rate limiting | ✅ Delivered |
+| Refresh-token validation on logout | ✅ Delivered |
+| Authentication tests and quality-gate formatting | ✅ Delivered |
+| README and architecture updates | ✅ Delivered |
 
-**Exit criteria:** the repository reads as a professionally engineered
-project — a new contributor can orient themselves, understand every
-architectural choice, and start contributing within one session.
+**Exit criteria:** unauthenticated cost requests are rejected, authentication
+abuse controls are active, logout rejects invalid refresh tokens, and the
+implementation is documented.
 
 ---
 
@@ -152,15 +149,15 @@ Highlights:
 | Sprint | Status | Description |
 | ------ | ------ | ----------- |
 | 0.1 | ✅ Complete | Backend foundation — FastAPI app factory, async SQLAlchemy 2.x, PostgreSQL, Alembic, structured logging, health endpoint. |
-| 0.2 | 🚧 In Progress | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
-| 0.3 | ⏳ Planned | Authentication — JWT bearer auth, Azure AD (OIDC), Google Login (OAuth 2.0), role-based access control. |
-| 0.4 | ⏳ Planned | Cloud integrations — Azure Cost Management, AWS Cost Explorer, GCP Billing export, unified normalised schema. |
+| 0.2 | ✅ Complete | Engineering documentation & architecture — ADRs, architecture doc, development workflow, roadmap. |
+| 0.3 | ✅ Complete | Authentication foundation — local JWT registration, login, refresh, logout, and `/me`. Azure AD, Google Login, and RBAC remain future work. |
+| 0.4 | ✅ Complete | Cloud integrations — AWS Cost Explorer, Azure Cost Management, and GCP Billing integration with normalized responses and tests. |
 | 0.5 | ⏳ Planned | AI analysis engine — anomaly detection, idle resource detection, recommendation generation. |
 | 0.6 | ⏳ Planned | REST APIs — cost query, anomaly, recommendation, and reporting endpoints with pagination and filtering. |
-| 0.7 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
-| 0.8 | ⏳ Planned | Real-time monitoring — WebSocket anomaly push, alerting rules, notification channels. |
+| 0.7 | ✅ Complete | Provider-independent cost aggregation — unified `/api/v1/costs` endpoint, provider dispatch, shared schema, registry, caching, and rate limiting. |
+| 0.8 | ⏳ Planned | Frontend dashboard — React/Next.js, cost breakdowns, anomaly feed, recommendation inbox. |
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
-| 1.0 | 🔭 Future | Production release — hardening, load testing, security audit, GA. |
+| 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection, auth rate limiting, logout validation, tests, and documentation. |
 
 ---
 
@@ -175,7 +172,7 @@ every subsequent sprint starts from a green build, not a whiteboard.
 **Evidence:** `pytest` passes; `GET /api/v1/health` returns `healthy` against
 a live PostgreSQL; `alembic upgrade head` runs cleanly.
 
-### Milestone M2 — Engineering Readiness (Sprint 0.2) 🚧
+### Milestone M2 — Engineering Readiness (Sprint 0.2) ✅
 
 The repository is contributor-ready: a new engineer can clone, read the ADRs,
 understand the architecture, and start a focused task within a single
@@ -186,25 +183,23 @@ recorded first.
 **Evidence:** `docs/` populated; five ADRs accepted; README links to all
 documentation.
 
-### Milestone M3 — Authenticated API Surface (Sprint 0.3)
+### Milestone M3 — Authenticated API Surface (Sprint 0.3 / 1.0) ✅
 
-The platform has a real identity boundary. JWT bearer tokens gate every
-non-health endpoint, Azure AD and Google Login are supported as enterprise
-identity providers, and a role model distinguishes read-only analysts from
-administrators.
+The platform has a real identity boundary. Local JWT Bearer tokens gate all
+cost endpoints, auth endpoints are rate-limited, and logout validates the
+submitted refresh token. Azure AD, Google Login, and RBAC remain future work.
 
-**Evidence:** protected endpoints return 401 without a token; role-based
-tests pass; Azure AD and Google OIDC flows complete end-to-end.
+**Evidence:** protected endpoints return 401 without a token; JWT flow tests
+pass; invalid logout tokens are rejected;
+the auth rate-limit behavior is covered by tests.
 
-### Milestone M4 — Unified Cost Corpus (Sprint 0.4)
+### Milestone M4 — Unified Cost API (Sprint 0.4 / 0.7) ✅
 
-For the first time the platform holds real cost data from all three clouds
-in a single normalised schema. This is the milestone that makes everything
-downstream (anomaly detection, recommendations, dashboards) possible.
+The platform exposes AWS, Azure, and GCP cost data through normalized provider
+contracts and a provider-independent aggregation endpoint.
 
-**Evidence:** Azure, AWS, and GCP ingestion jobs run to completion; the
-normalised tables contain cross-provider rows; a sample query returns a
-unified cost breakdown.
+**Evidence:** provider integrations, registry dispatch, normalized responses,
+cache behavior, and endpoint error paths are covered by tests.
 
 ### Milestone M5 — AI Recommendations (Sprint 0.5)
 
@@ -232,11 +227,11 @@ WebSocket push for live anomalies.
 **Evidence:** dashboard renders real cost data; WebSocket channel delivers a
 seeded anomaly event; alerting rules fire to configured channels.
 
-### Milestone M8 — Production Deployment (Sprint 0.9 → 1.0)
+### Milestone M8 — Production Deployment (Sprint 0.9)
 
-The platform runs in Kubernetes with IaC-provisioned infrastructure, a CI/CD
-pipeline, and a security audit complete. Sprint 1.0 marks general
-availability.
+The platform will run in Kubernetes with IaC-provisioned infrastructure,
+CI/CD, load testing, and a security review. Sprint 1.0 authentication work is
+complete, but deployment and general availability remain planned.
 
 **Evidence:** Helm chart deploys to a staging cluster; Terraform provisions
 the cloud backing; load tests meet the SLO; security review passes.
@@ -335,3 +330,4 @@ Being explicit about what MCAICD is **not** trying to be keeps scope honest:
 | ---- | ------ | ------ |
 | 2026-06-27 | 0.1 | Initial roadmap published with backend foundation complete. |
 | 2026-06-28 | 0.2 | Roadmap restructured into sprint-based plan; added milestones, timeline, non-goals, and long-term vision. |
+| 2026-07-12 | 1.0 | Updated completed sprints through API security and documented the remaining AI, API, frontend, and deployment work. |

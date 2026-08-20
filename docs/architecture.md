@@ -66,12 +66,12 @@ as forward-looking contracts.
 ```mermaid
 graph TD
     User["Client / Browser / API Consumer"]
-    FE["Frontend Dashboard<br/>(Sprint 0.7 — planned)"]
+    FE["Frontend Dashboard<br/>(Sprint 0.8 — planned)"]
     API["FastAPI ASGI Application<br/>(uvicorn)"]
-    AuthN["Authentication Layer<br/>JWT · Azure AD · Google<br/>(Sprint 0.3 — planned)"]
+    AuthN["Authentication Layer<br/>JWT<br/>(Sprint 0.3 / 1.0 — live)"]
     Svc["Service Layer<br/>Business Logic"]
     DB[("PostgreSQL 16")]
-    Redis[("Redis<br/>(planned)")]
+    Redis[("Redis<br/>(live)")]
     Cloud["Cloud Providers<br/>AWS · Azure · GCP"]
     AI["AI Providers<br/>OpenAI · Gemini · Claude · Azure OpenAI"]
 
@@ -89,7 +89,7 @@ graph TD
 The request path is intentionally simple: a client hits the FastAPI
 application, the authentication layer validates identity, the service layer
 executes domain logic, and the service layer talks to PostgreSQL (the system
-of record), Redis (the cache, planned), cloud provider APIs (for live cost
+of record), Redis (the cache), cloud provider APIs (for live cost
 data ingestion), and AI providers (for recommendation generation).
 
 ### Layered View
@@ -138,9 +138,8 @@ workers without going through FastAPI — the same pattern already used by
 
 ## Cloud Provider Abstraction
 
-> **Status:** Live — Sprint 0.6. AWS (Sprint 0.5) and Azure (Sprint 0.6) are
-> concrete implementations behind the shared abstraction. GCP remains
-> planned for a later sprint; only AWS and Azure are delivered today.
+> **Status:** Live — Sprint 0.6–0.9. AWS, Azure, and GCP are concrete
+> implementations behind the shared abstraction.
 
 The cloud-provider abstraction gives the rest of the application a single,
 uniform seam for talking to any cloud vendor. The platform no longer
@@ -156,14 +155,14 @@ graph TD
     subgraph "API Layer (app/api/routes/)"
         AWSRoute["aws.py<br/>GET /api/v1/aws/costs"]
         AzureRoute["azure.py<br/>GET /api/v1/azure/costs"]
-        GCPRoute["gcp.py<br/>(future — Sprint 0.7+)"]
+        GCPRoute["gcp.py<br/>GET /api/v1/gcp/costs"]
     end
 
     subgraph "Provider Abstraction (app/providers/)"
         ABC["CloudProvider<br/>(ABC — base.py)"]
         AWS["AWSCloudProvider<br/>aws/provider.py"]
         Azure["AzureCloudProvider<br/>azure/provider.py"]
-        GCP["GCPCloudProvider<br/>(future)"]
+        GCP["GCPCloudProvider<br/>gcp/provider.py"]
         Registry["Manual Registry<br/>registry.py"]
     end
 
@@ -174,7 +173,7 @@ graph TD
     subgraph "Mappers"
         AWSMap["AWSMapper<br/>aws/mapper.py"]
         AzureMap["AzureMapper<br/>azure/mapper.py"]
-        GCPMap["GCPMapper<br/>(future)"]
+        GCPMap["GCPMapper<br/>gcp/mapper.py"]
     end
 
     AWSRoute -->|"Depends(get_provider('aws'))"| Registry
@@ -291,19 +290,18 @@ extra wiring.
 
 ### Implemented providers
 
-The shared abstraction is satisfied by two concrete providers today:
+The shared abstraction is satisfied by three concrete providers today:
 
 | Provider | Class | Mapper | Service module | Route | Registry key |
 | -------- | ----- | ------ | -------------- | ----- | ------------ |
 | AWS | `AWSCloudProvider` (`app/providers/aws/provider.py`) | `AWSMapper` (`app/providers/aws/mapper.py`) | `app/services/aws/cost_explorer.py` | `GET /api/v1/aws/costs` | `"aws"` |
 | Azure | `AzureCloudProvider` (`app/providers/azure/provider.py`) | `AzureMapper` (`app/providers/azure/mapper.py`) | `app/services/azure/cost_management.py` | `GET /api/v1/azure/costs` | `"azure"` |
-| GCP | `GCPCloudProvider` *(planned)* | `GCPMapper` *(planned)* | *(planned)* | *(planned)* | `"gcp"` |
+| GCP | `GCPCloudProvider` (`app/providers/gcp/provider.py`) | `GCPMapper` (`app/providers/gcp/mapper.py`) | `app/services/gcp/billing.py` | `GET /api/v1/gcp/costs` | `"gcp"` |
 
 The AWS row is the reference implementation delivered in Sprint 0.5.
 The Azure row was added in Sprint 0.6 and is described in detail below.
-The GCP row is the next vendor to land; until then the registry has no
-`"gcp"` entry and `Depends(get_provider("gcp"))` will raise
-`ProviderError(error_code="PROVIDER_NOT_REGISTERED")`.
+The GCP provider completes the current three-cloud provider set and is
+available through the dedicated and unified cost endpoints.
 
 ### Azure Provider
 
@@ -570,7 +568,7 @@ graph LR
 | Aggregation | `app/services/cost_aggregator.py` validates the provider, resolves the registered implementation, and returns the normalized `CostResponse`. |
 | Cache key | `provider + subscription/account scope + start/end date + granularity`. |
 | Cache policy | JSON payloads are cached for `CACHE_TTL_SECONDS` (default: 300). Cache failures fall back to the provider call. |
-| Rate limiting | AWS and Azure cost routes are rate limited per client IP using `RATE_LIMIT_PER_MINUTE` (default: 60/minute). |
+| Rate limiting | Cost routes are rate limited per client IP using `RATE_LIMIT_PER_MINUTE`; authentication routes use `AUTH_RATE_LIMIT_PER_MINUTE`. |
 | Route design | Routes remain thin: validation, auth, aggregation call, typed HTTP error translation. |
 
 **Why a factory?** A factory lets tests construct the app with overridden
@@ -688,7 +686,8 @@ lock-in. It is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
 ### Cloud Integration Layer
 
-> **Status:** Planned — Sprint 0.4. Not yet implemented.
+> **Status:** Live for provider cost queries — Sprint 0.4–0.9. Background
+> ingestion and persisted historical cost storage remain planned.
 
 The cloud integration layer ingests billing and usage data from each
 provider and normalises it into the unified schema. For the live cost-query
@@ -730,7 +729,7 @@ graph TD
 | **Logging** | ✅ Live | Structured JSON via `JsonFormatter` in `app/core/logging.py`. Every log line is a JSON object with `timestamp`, `level`, `logger`, `message`, and arbitrary structured fields. The `uvicorn.access` logger is captured. |
 | **Health** | ✅ Live | `GET /api/v1/health` — a readiness probe with live database and Redis checks. Returns 503 when either dependency is unreachable. |
 | **Cache** | ✅ Live | Redis-backed response cache for provider cost queries. Cached payloads are keyed by provider, scope, and date range. |
-| **Rate limiting** | ✅ Live | Per-IP request limiting on the AWS and Azure cost routes. |
+| **Rate limiting** | ✅ Live | Per-IP request limiting on all cost routes and authentication routes. |
 | **Metrics** | ⏳ Planned | Prometheus `/metrics` endpoint with RED metrics (rate, errors, duration) per route, plus DB pool gauges. |
 | **Tracing** | ⏳ Planned | OpenTelemetry traces propagating through the service and provider-call boundaries. |
 | **Dashboards** | ⏳ Planned | Grafana dashboards derived from Prometheus metrics and structured logs. |
@@ -807,7 +806,7 @@ configuration concern, not a code concern.
 | **Secrets** | All configuration via `Settings`. `.env` is git-ignored. Production secrets via orchestrator secret stores (planned). |
 | **SQL injection** | SQLAlchemy ORM and parameterised queries only. No string-concatenated SQL. |
 | **Input validation** | Pydantic v2 models on every request/response. `Literal` types for fixed-value fields. `extra="forbid"` on response models to prevent schema drift. |
-| **Auth (planned)** | JWT verification on every non-health route. RBAC for write operations. |
+| **Auth** | JWT verification on all cost routes. Azure AD, Google OAuth, and RBAC for write operations remain planned. |
 | **CORS** | `CORS_ORIGINS` is an explicit allow-list, default empty. |
 | **Dependency hygiene** | Lower-bound pins with `>=` ranges. No dependency added without maintainer review. A Dependabot configuration is planned. |
 | **Logging safety** | The alembic `env.py` and `scripts/check_db.py` mask database URLs before logging so credentials never reach log sinks. |
@@ -840,7 +839,7 @@ graph TD
 | --------- | ------------------ | -------- |
 | Ingestion service | When ingestion load dominates worker CPU and blocks web requests. | Shared PostgreSQL, no shared process. |
 | AI recommendation service | When model calls have different scaling and cost profiles than web traffic. | The `AIProvider` interface becomes a network contract. |
-| Frontend | Sprint 0.7 ships a frontend; it may become a separate deployment for CDN/caching reasons. | Same API, different deployable. |
+| Frontend | Sprint 0.8 ships a frontend; it may become a separate deployment for CDN/caching reasons. | Same API, different deployable. |
 
 The provider abstraction (ADR-0005) and the clean layering (ADR-0003) exist
 specifically to keep this option open. We will not extract services
