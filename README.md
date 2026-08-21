@@ -17,7 +17,7 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 1.1 — Cost Analytics & Intelligence Foundation complete.
+> **Status:** Sprint 1.2 — Frontend Readiness & Intelligence Contracts complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
 > aggregation, Redis caching/rate limiting, and GCP support are complete.
@@ -111,6 +111,8 @@ MCAICD/
   daily trends, period comparisons, and top cost drivers
 - ✅ Currency-aware analytics with Decimal monetary calculations and explicit Pydantic response schemas
 - ✅ Analytics endpoints reuse normalized provider responses and the existing Redis cache
+- ✅ Frontend-ready dashboard summary and deterministic insights contracts
+- ✅ Rule-based cost increase, decrease, and top-driver insights; AI/LLM integration remains future work
 
 ---
 
@@ -129,6 +131,7 @@ MCAICD/
 | 0.9 | ⏳ Planned | Deployment — Dockerfile for the app, Kubernetes manifests, Helm chart, Terraform IaC. |
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection verified on all endpoints, quality gates pass, documentation updated. |
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — normalized daily costs, authenticated analytics endpoints, comparisons, cost drivers, currency validation, and test coverage. |
+| 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insight schemas/generation, authenticated endpoints, and cache reuse. |
 
 ---
 
@@ -209,6 +212,8 @@ uvicorn app.main:app --reload
 | http://localhost:8000/api/v1/analytics/trends | Daily cost trend with zero-filled dates |
 | http://localhost:8000/api/v1/analytics/compare | Current vs previous period comparison |
 | http://localhost:8000/api/v1/analytics/drivers | Largest provider/service cost changes |
+| http://localhost:8000/api/v1/dashboard/summary | Frontend-ready overview, breakdowns, trend, and drivers |
+| http://localhost:8000/api/v1/dashboard/insights | Deterministic cost insights for the dashboard |
 
 ---
 
