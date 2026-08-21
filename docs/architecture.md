@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-08-20 (Sprint 1.2)
+> **Last Updated:** 2026-08-21 (Sprint 1.3)
 
 ---
 
@@ -52,14 +52,15 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 1.2):** the foundation layers are live — application
+**Current state (Sprint 1.3):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
 health probe, configuration, cloud provider integrations, unified cost
 aggregation, Redis caching, rate limiting, JWT Bearer authentication, and
 deterministic cost analytics. The analytics layer remains intentionally
 descriptive; anomaly detection, forecasting, and AI recommendations are
 future work. A frontend-ready dashboard contract and deterministic insight
-boundary now sit above analytics; no AI or LLM is called.
+boundary now sit above analytics; the Next.js frontend MVP consumes those
+contracts through a centralized JWT-aware client. No AI or LLM is called.
 The AI engine remains planned for Sprint 0.5; its seams are described below
 as forward-looking contracts.
 
@@ -70,7 +71,7 @@ as forward-looking contracts.
 ```mermaid
 graph TD
     User["Client / Browser / API Consumer"]
-    FE["Frontend Dashboard<br/>(Sprint 0.8 — planned)"]
+    FE["Frontend Dashboard<br/>(Next.js Sprint 1.3 — live)"]
     API["FastAPI ASGI Application<br/>(uvicorn)"]
     AuthN["Authentication Layer<br/>JWT<br/>(Sprint 0.3 / 1.0 — live)"]
     Svc["Service Layer<br/>Business Logic"]
@@ -554,6 +555,24 @@ clients.
 | Dependencies | `app/api/deps.py` | Request-scoped session (`get_db_session`) and session-factory (`get_session_factory`) for graceful degradation. |
 | Service layer | `app/services/` | Domain logic, isolated from HTTP. Currently: `HealthService`, `CostAggregatorService`, `AnalyticsService`, and `DashboardService`. |
 | OpenAPI metadata | `app/core/openapi.py` | Title, description, tags, contact, licence. |
+
+### Frontend
+
+The frontend is a separate Next.js App Router application in `frontend/`.
+It is intentionally a thin consumer of the existing authenticated dashboard
+contracts; it does not duplicate provider logic or add backend endpoints.
+
+| Responsibility | Location | Notes |
+| -------------- | -------- | ----- |
+| Application routes | `frontend/app/` | Login and dashboard entry points. |
+| Dashboard shell and views | `frontend/components/` | Header/sidebar shell, KPI cards, provider distribution, trend, services, and insights. |
+| Typed API client | `frontend/lib/api/client.ts` | Bearer tokens, refresh-once behavior, logout cleanup, and typed requests. |
+| Date and display helpers | `frontend/lib/dates.ts` | Inclusive date presets and safe currency/percentage formatting. |
+| Runtime configuration | `frontend/.env.example` | `NEXT_PUBLIC_API_BASE_URL`, defaulting to the local backend. |
+
+The browser calls `/api/v1/auth/*`, `/api/v1/dashboard/summary`, and
+`/api/v1/dashboard/insights`. The backend must allow the frontend origin via
+`CORS_ORIGINS`.
 
 ### Cost Query Pipeline
 

@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.3 Frontend MVP:
+  - Next.js App Router dashboard under `frontend/` with JWT login/logout.
+  - Centralized authenticated API client with access-token refresh and typed dashboard contracts.
+  - Live overview, provider breakdown, daily trend, top services, and deterministic insight cards.
+  - Last-7-days, last-30-days, and current-month presets with loading, error, empty, and responsive states.
+  - Frontend environment documentation and lint, typecheck, test, and production-build scripts.
+
 - Sprint 1.2 Frontend Readiness & Intelligence Contracts:
   - Authenticated `GET /api/v1/dashboard/summary` with overview, provider/service breakdowns, daily trend, and cost drivers.
   - Authenticated `GET /api/v1/dashboard/insights` with explicit deterministic insight objects.

@@ -17,11 +17,12 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 1.2 — Frontend Readiness & Intelligence Contracts complete.
+> **Status:** Sprint 1.3 — Frontend MVP complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
 > aggregation, Redis caching/rate limiting, and GCP support are complete.
-> All cost endpoints are now JWT-protected.
+> All cost endpoints are now JWT-protected. The Next.js dashboard consumes the
+> authenticated dashboard contracts with live analytics and deterministic insights.
 
 ## Table of Contents
 
@@ -60,6 +61,7 @@ MCAICD/
 ├── scripts/
 │   └── check_db.py       # Database connectivity diagnostic
 ├── tests/                # Test suite
+├── frontend/             # Next.js dashboard MVP
 ├── .env.example
 ├── alembic.ini
 ├── docker-compose.yml
@@ -113,6 +115,7 @@ MCAICD/
 - ✅ Analytics endpoints reuse normalized provider responses and the existing Redis cache
 - ✅ Frontend-ready dashboard summary and deterministic insights contracts
 - ✅ Rule-based cost increase, decrease, and top-driver insights; AI/LLM integration remains future work
+- ✅ Next.js frontend MVP with JWT login, live analytics, date presets, and responsive states
 
 ---
 
@@ -132,6 +135,7 @@ MCAICD/
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection verified on all endpoints, quality gates pass, documentation updated. |
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — normalized daily costs, authenticated analytics endpoints, comparisons, cost drivers, currency validation, and test coverage. |
 | 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insight schemas/generation, authenticated endpoints, and cache reuse. |
+| 1.3 | ✅ Complete | Frontend MVP — Next.js dashboard shell, JWT integration, live analytics views, date presets, responsive states, and quality gates. |
 
 ---
 
@@ -189,6 +193,21 @@ alembic upgrade head
 ```bash
 uvicorn app.main:app --reload
 ```
+
+### Start the frontend
+
+In a second terminal:
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. The frontend expects the backend at
+`NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:8000`) and the backend
+`CORS_ORIGINS` setting must include `http://localhost:3000`.
 
 ### Access the API
 

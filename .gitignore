@@ -75,6 +75,10 @@ build/
 *.egg-info/
 pip-wheel-metadata/
 MANIFEST
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/tsconfig.tsbuildinfo
 
 # ──────────────────────────────────────────────
 # Jupyter

@@ -11,7 +11,7 @@
 > hiring managers who need to understand where the project is headed and how
 > the near-term work ladders up to the long-term vision.
 >
-> **Last Updated:** 2026-08-20 (Sprint 1.2)
+> **Last Updated:** 2026-08-21 (Sprint 1.3)
 >
 > **Status legend:** ✅ Complete · 🚧 In Progress · ⏳ Planned · 🔭 Future
 
@@ -157,6 +157,26 @@ introduced.
 
 ---
 
+### Sprint 1.3 — Frontend MVP ✅ Complete
+
+**Focus:** Deliver a small dashboard that consumes the Sprint 1.2 contracts
+without expanding the backend surface.
+
+| Deliverable | Status |
+| ----------- | ------ |
+| Next.js App Router foundation and responsive dashboard shell | ✅ Delivered |
+| JWT login, logout, token refresh, and centralized typed API client | ✅ Delivered |
+| Overview, provider breakdown, daily trend, top services, and insights | ✅ Delivered |
+| Date presets plus loading, error, and empty states | ✅ Delivered |
+| Frontend lint, typecheck, tests, and production build | ✅ Delivered |
+| Frontend setup documentation and changelog updates | ✅ Delivered |
+
+**Exit criteria:** the dashboard runs against the existing backend APIs, uses
+live response data, and passes frontend and backend quality gates without
+adding AI/LLM, forecasting, or new backend architecture.
+
+---
+
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in
@@ -196,6 +216,7 @@ Highlights:
 | 1.0 | ✅ Complete | Authentication & API Security — JWT Bearer protection, auth rate limiting, logout validation, tests, and documentation. |
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — daily normalization, analytics APIs, Decimal calculations, currency validation, cost drivers, and documentation. |
 | 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insights, explicit schemas, cache reuse, and documentation. |
+| 1.3 | ✅ Complete | Frontend MVP — Next.js dashboard shell, JWT integration, live analytics views, date presets, responsive states, and quality gates. |
 
 ---
 
