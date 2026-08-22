@@ -91,6 +91,13 @@ export function login(email: string, password: string) {
   });
 }
 
+export function register(fullName: string, email: string, password: string) {
+  return request<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ full_name: fullName, email, password }),
+  });
+}
+
 export function logout() {
   const refreshToken = typeof window === "undefined" ? null : window.localStorage.getItem(REFRESH_TOKEN_KEY);
   return request<{ message: string }>("/auth/logout", {

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ApiError, getAccessToken, login, storeAuth } from "../../lib/api/client";
 
 export default function LoginPage() {
@@ -51,7 +52,9 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-        <p className="auth-note">Use an account created through the API registration flow.</p>
+        <p className="auth-note">
+          Don&apos;t have an account? <Link href="/register">Create one</Link>
+        </p>
       </section>
     </main>
   );
