@@ -33,6 +33,12 @@ export function formatPercent(value: string | null) {
   return `${amount >= 0 ? "+" : ""}${amount.toFixed(1)}%`;
 }
 
+export function formatDateLabel(value: string) {
+  const date = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+}
+
 export function titleCaseProvider(provider: string) {
   return provider === "gcp" ? "GCP" : provider.toUpperCase();
 }
