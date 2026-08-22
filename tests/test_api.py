@@ -8,6 +8,8 @@ from __future__ import annotations
 import pytest
 from httpx import AsyncClient
 
+from app.main import _normalise_cors_origins
+
 
 @pytest.mark.asyncio
 async def test_root_returns_service_identity(client: AsyncClient) -> None:
@@ -28,3 +30,9 @@ async def test_openapi_docs_available(client: AsyncClient) -> None:
     spec = response.json()
     assert spec["info"]["title"] == "Multi-Cloud AI Cost Detective"
     assert "/api/v1/health" in spec["paths"]
+
+
+def test_cors_origins_are_normalised_for_browser_requests() -> None:
+    assert _normalise_cors_origins(["http://localhost:3000/"]) == [
+        "http://localhost:3000"
+    ]

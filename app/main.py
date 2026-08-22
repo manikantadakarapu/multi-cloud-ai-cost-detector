@@ -23,6 +23,11 @@ from app.database.session import dispose_engine
 from app.providers import list_providers
 
 
+def _normalise_cors_origins(origins: list[object]) -> list[str]:
+    """Return browser-compatible origins without a trailing slash."""
+    return [str(origin).rstrip("/") for origin in origins]
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     configure_logging()
@@ -58,7 +63,7 @@ def create_app() -> FastAPI:
     # allow-list; in local/dev it typically includes localhost front-ends.
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.cors_origins],
+        allow_origins=_normalise_cors_origins(settings.cors_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
