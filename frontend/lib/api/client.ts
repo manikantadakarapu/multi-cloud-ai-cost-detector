@@ -17,6 +17,19 @@ export class ApiError extends Error {
   }
 }
 
+function getErrorMessage(detail: unknown): string {
+  if (typeof detail === "string" && detail) return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "msg" in item) return String(item.msg);
+      return "Invalid request.";
+    });
+    if (messages.length) return messages.join(" ");
+  }
+  return "Unable to complete the request.";
+}
+
 export function getAccessToken() {
   return typeof window === "undefined" ? null : window.localStorage.getItem(ACCESS_TOKEN_KEY);
 }
@@ -65,7 +78,15 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   const token = getAccessToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_PREFIX}${path}`, { ...init, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${API_PREFIX}${path}`, { ...init, headers });
+  } catch {
+    throw new ApiError(
+      `Cannot reach the backend at ${API_BASE_URL}. Start the FastAPI server and try again.`,
+      0,
+    );
+  }
   if (response.status === 401 && retry && typeof window !== "undefined") {
     const refreshed = await refreshAccessToken();
     if (refreshed) return request<T>(path, init, false);
@@ -74,8 +95,8 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
   if (!response.ok) {
     let message = "Unable to complete the request.";
     try {
-      const body = (await response.json()) as { detail?: string };
-      message = body.detail || message;
+      const body = (await response.json()) as { detail?: unknown };
+      message = getErrorMessage(body.detail);
     } catch {
       // Keep the safe generic message when the backend response is not JSON.
     }

@@ -25,6 +25,10 @@ export default function RegisterPage() {
       setError("Passwords do not match.");
       return;
     }
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("Password must be at least 8 characters and include an uppercase letter, lowercase letter, and number.");
+      return;
+    }
 
     setLoading(true);
     try {
