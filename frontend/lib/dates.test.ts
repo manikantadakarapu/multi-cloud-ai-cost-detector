@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPercent, getDateRange } from "./dates";
+import { formatDateLabel, formatPercent, getDateRange } from "./dates";
 
 describe("dashboard date helpers", () => {
   it("returns an inclusive seven-day range", () => {
@@ -15,5 +15,9 @@ describe("dashboard date helpers", () => {
 
   it("formats a missing comparison baseline safely", () => {
     expect(formatPercent(null)).toBe("No prior baseline");
+  });
+
+  it("formats trend dates for chart labels", () => {
+    expect(formatDateLabel("2026-08-21")).toBe("Aug 21");
   });
 });
