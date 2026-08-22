@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Centralized authenticated API client with access-token refresh and typed dashboard contracts.
   - Live overview, provider breakdown, daily trend, top services, and deterministic insight cards.
   - Last-7-days, last-30-days, and current-month presets with loading, error, empty, and responsive states.
+  - Explicitly opt-in `NEXT_PUBLIC_DEMO_MODE` with deterministic sample dashboard data for local MVP previews.
   - Frontend environment documentation and lint, typecheck, test, and production-build scripts.
 
 - Sprint 1.2 Frontend Readiness & Intelligence Contracts:
