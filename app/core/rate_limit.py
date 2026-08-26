@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import types
 from collections.abc import Callable
 from typing import Any
 
@@ -10,6 +11,7 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.responses import Response
 
 from app.core.config import settings
 
@@ -21,9 +23,30 @@ def cost_rate_limit() -> str:
     return f"{settings.rate_limit_per_minute}/minute"
 
 
+def _bind_rate_limit(
+    wrapper: Callable[..., Any], func: Callable[..., Any]
+) -> Callable[..., Any]:
+    """Rebind SlowAPI wrapper to original function globals for FastAPI annotation resolution."""
+    globals_dict = dict(func.__globals__)
+    globals_dict.setdefault("Response", Response)
+    bound = types.FunctionType(
+        wrapper.__code__,
+        globals_dict,
+        wrapper.__name__,
+        wrapper.__defaults__,
+        wrapper.__closure__,
+    )
+    bound.__dict__.update(wrapper.__dict__)
+    bound.__annotations__ = func.__annotations__
+    bound.__wrapped__ = func
+    bound.__kwdefaults__ = getattr(wrapper, "__kwdefaults__", None)
+    return bound
+
+
 def enforce_cost_rate_limit(func: Callable[..., Any]) -> Callable[..., Any]:
     """Apply the configured SlowAPI limit to a cost route handler."""
-    return limiter.limit(cost_rate_limit)(func)
+    wrapper = limiter.limit(cost_rate_limit)(func)
+    return _bind_rate_limit(wrapper, func)
 
 
 def auth_rate_limit() -> str:
@@ -33,7 +56,8 @@ def auth_rate_limit() -> str:
 
 def enforce_auth_rate_limit(func: Callable[..., Any]) -> Callable[..., Any]:
     """Apply the configured SlowAPI limit to an auth route handler."""
-    return limiter.limit(auth_rate_limit)(func)
+    wrapper = limiter.limit(auth_rate_limit)(func)
+    return _bind_rate_limit(wrapper, func)
 
 
 def reset_rate_limits() -> None:

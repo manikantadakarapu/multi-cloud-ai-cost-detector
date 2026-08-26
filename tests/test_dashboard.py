@@ -15,6 +15,7 @@ from app.providers.schemas import CostResponse, DailyCost, ServiceCost
 from app.schemas.analytics import AnalyticsQuery
 from app.schemas.dashboard import DashboardSummary
 from app.schemas.insights import InsightType
+from app.services.ai.insights import AIInsightService
 from app.services.analytics.service import AnalyticsService
 from app.services.dashboard import DashboardService
 
@@ -76,7 +77,12 @@ def _service(cache: _FakeCache | None = None) -> DashboardService:
         cache=cache,
         provider_factory=lambda name: _DashboardProvider(name),
     )
-    return DashboardService(analytics=analytics, cache=cache, user_scope="test-user")
+    return DashboardService(
+        analytics=analytics,
+        cache=cache,
+        user_scope="test-user",
+        ai_service=AIInsightService(enabled=False),
+    )
 
 
 def _query() -> AnalyticsQuery:
@@ -188,8 +194,11 @@ async def test_dashboard_insights_endpoint_returns_schema(
     finally:
         app.dependency_overrides.pop(get_dashboard_service, None)
 
-    assert response.status_code == 200
-    assert response.json()["insights"][0]["type"] == "cost_increase"
+    assert response.status_code == 200, f"422 body: {response.json()}"
+    body = response.json()
+    assert body["insights"][0]["type"] == "cost_increase"
+    assert body["ai_insights"] == []
+    assert body["ai_status"] == "disabled"
 
 
 def test_dashboard_query_rejects_invalid_date_range() -> None:

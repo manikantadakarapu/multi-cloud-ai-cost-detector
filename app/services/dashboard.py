@@ -15,23 +15,28 @@ from app.schemas.insights import (
     InsightSeverity,
     InsightType,
 )
+from app.services.ai.insights import AIInsightService
 from app.services.analytics.service import AnalyticsService
 
 INSIGHT_PERCENTAGE_THRESHOLD = Decimal("5.00")
 
 
 class DashboardService:
-    """Compose existing analytics into frontend contracts without AI calls."""
+    """Compose existing analytics into frontend contracts and optional AI explanations."""
 
     def __init__(
         self,
         analytics: AnalyticsService,
         cache: RedisCache | None = None,
         user_scope: str = "shared",
+        ai_service: AIInsightService | None = None,
     ) -> None:
         self._analytics = analytics
         self._cache = cache
         self._user_scope = user_scope
+        self._ai_service = ai_service or AIInsightService(
+            cache=cache, user_scope=user_scope
+        )
 
     @staticmethod
     def _previous_period(query: AnalyticsQuery) -> tuple[date, date]:
@@ -94,18 +99,30 @@ class DashboardService:
             await self._cache.set_json(key, result)
         return result
 
-    async def insights(self, query: AnalyticsQuery) -> DashboardInsights:
+    async def insights(
+        self, query: AnalyticsQuery, *, include_ai: bool = True
+    ) -> DashboardInsights:
         key = self._cache_key("insights", query)
         cached = await self._get_cached(key, DashboardInsights)
         if cached is not None:
-            return cached
+            deterministic = cached.insights
+            dashboard = await self.summary(query)
+        else:
+            dashboard = await self.summary(query)
+            deterministic = self._generate_insights(dashboard)
+            stored = DashboardInsights(insights=deterministic)
+            if self._cache is not None:
+                await self._cache.set_json(key, stored)
 
-        dashboard = await self.summary(query)
-        insights = self._generate_insights(dashboard)
-        result = DashboardInsights(insights=insights)
-        if self._cache is not None:
-            await self._cache.set_json(key, result)
-        return result
+        ai_bundle = await self._ai_service.generate(
+            query, dashboard, include_ai=include_ai
+        )
+        return DashboardInsights(
+            insights=deterministic,
+            ai_insights=ai_bundle.insights,
+            ai_status=ai_bundle.status,
+            ai_message=ai_bundle.message,
+        )
 
     @staticmethod
     def _severity(percentage: Decimal | None, impact: Decimal) -> InsightSeverity:

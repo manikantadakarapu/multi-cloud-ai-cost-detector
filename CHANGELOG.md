@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.5 Intelligent Cost Insights:
+  - Provider-independent `CostEvent` model and configurable threshold selection.
+  - Facts-only Gemini context builder and dedicated `app/services/ai/` loop.
+  - Structured, validated Gemini explanations on `GET /api/v1/dashboard/insights`.
+  - Redis caching of successful AI insights using the existing cache client.
+  - Dashboard Cost Insights UI for AI explanations, loading, and safe fallback copy.
+  - Focused backend and frontend tests for events, validation, cache, and failure paths.
+
 - Sprint 1.3 Frontend MVP:
   - Next.js App Router dashboard under `frontend/` with JWT login/logout.
   - Centralized authenticated API client with access-token refresh and typed dashboard contracts.

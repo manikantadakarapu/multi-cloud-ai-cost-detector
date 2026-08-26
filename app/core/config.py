@@ -21,6 +21,7 @@ on startup so you always know what is actually being used.
 from __future__ import annotations
 
 import os
+from decimal import Decimal
 from functools import lru_cache
 from typing import Literal
 
@@ -180,6 +181,53 @@ class Settings(BaseSettings):
         default=60,
         ge=1,
         validation_alias="RATE_LIMIT_PER_MINUTE",
+    )
+
+    # --- Gemini cost insights (Sprint 1.5) ---
+    gemini_api_key: str | None = Field(
+        default=None,
+        validation_alias="GEMINI_API_KEY",
+    )
+    ai_insight_enabled: bool = Field(
+        default=False,
+        validation_alias="AI_INSIGHT_ENABLED",
+    )
+    ai_insight_model: str = Field(
+        default="gemini-2.0-flash",
+        validation_alias="AI_INSIGHT_MODEL",
+    )
+    ai_insight_max_output_tokens: int = Field(
+        default=512,
+        ge=64,
+        le=2048,
+        validation_alias="AI_INSIGHT_MAX_OUTPUT_TOKENS",
+    )
+    ai_insight_timeout_seconds: int = Field(
+        default=12,
+        ge=1,
+        le=60,
+        validation_alias="AI_INSIGHT_TIMEOUT_SECONDS",
+    )
+    ai_insight_percentage_threshold: Decimal = Field(
+        default=Decimal("10.00"),
+        ge=0,
+        validation_alias="AI_INSIGHT_PERCENTAGE_THRESHOLD",
+    )
+    ai_insight_absolute_threshold: Decimal = Field(
+        default=Decimal("50.00"),
+        ge=0,
+        validation_alias="AI_INSIGHT_ABSOLUTE_THRESHOLD",
+    )
+    ai_insight_max_events: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        validation_alias="AI_INSIGHT_MAX_EVENTS",
+    )
+    ai_insight_cache_ttl_seconds: int = Field(
+        default=3600,
+        ge=1,
+        validation_alias="AI_INSIGHT_CACHE_TTL_SECONDS",
     )
 
     @computed_field

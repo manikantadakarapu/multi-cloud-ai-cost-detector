@@ -17,12 +17,13 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 1.3 — Frontend MVP complete.
+> **Status:** Sprint 1.5 — Intelligent cost insights complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
 > aggregation, Redis caching/rate limiting, and GCP support are complete.
 > All cost endpoints are now JWT-protected. The Next.js dashboard consumes the
-> authenticated dashboard contracts with live analytics and deterministic insights.
+> authenticated dashboard contracts with live analytics, deterministic insights,
+> and optional Gemini explanations of meaningful cost changes.
 
 ## Table of Contents
 
@@ -114,7 +115,8 @@ MCAICD/
 - ✅ Currency-aware analytics with Decimal monetary calculations and explicit Pydantic response schemas
 - ✅ Analytics endpoints reuse normalized provider responses and the existing Redis cache
 - ✅ Frontend-ready dashboard summary and deterministic insights contracts
-- ✅ Rule-based cost increase, decrease, and top-driver insights; AI/LLM integration remains future work
+- ✅ Rule-based cost increase, decrease, and top-driver insights
+- ✅ Gemini explanations of selected deterministic cost events, with Redis caching and dashboard fallback when AI is unavailable
 - ✅ Next.js frontend MVP with JWT login, live analytics, date presets, and responsive states
 
 ---
@@ -136,6 +138,8 @@ MCAICD/
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — normalized daily costs, authenticated analytics endpoints, comparisons, cost drivers, currency validation, and test coverage. |
 | 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insight schemas/generation, authenticated endpoints, and cache reuse. |
 | 1.3 | ✅ Complete | Frontend MVP — Next.js dashboard shell, JWT integration, live analytics views, date presets, responsive states, and quality gates. |
+| 1.4 | ✅ Complete | Live dashboard integration — frontend consumes live backend cost data. |
+| 1.5 | ✅ Complete | Intelligent cost insights — Gemini explains selected deterministic cost events without breaking the dashboard when AI is unavailable. |
 
 ---
 
@@ -232,7 +236,17 @@ Open http://localhost:3000. The frontend expects the backend at
 | http://localhost:8000/api/v1/analytics/compare | Current vs previous period comparison |
 | http://localhost:8000/api/v1/analytics/drivers | Largest provider/service cost changes |
 | http://localhost:8000/api/v1/dashboard/summary | Frontend-ready overview, breakdowns, trend, and drivers |
-| http://localhost:8000/api/v1/dashboard/insights | Deterministic cost insights for the dashboard |
+| http://localhost:8000/api/v1/dashboard/insights | Deterministic cost insights plus optional Gemini explanations |
+
+### AI cost insights
+
+AI insights explain deterministic cost events. They do not independently
+query or modify cloud resources.
+
+Enable them with `AI_INSIGHT_ENABLED=true` and a server-side `GEMINI_API_KEY`.
+The dashboard continues to show rule-based insights when Gemini is disabled,
+times out, hits quota, or returns invalid JSON. The API key is never sent to
+the frontend.
 
 ---
 
@@ -347,6 +361,15 @@ All other endpoints under `/api/v1/` require a valid Bearer token.
 | `REDIS_URL`     | Redis connection URL used for response caching | `redis://localhost:6379/0` |
 | `CACHE_TTL_SECONDS` | Default TTL for cached cost responses (seconds) | `300` |
 | `RATE_LIMIT_PER_MINUTE` | Per-IP rate limit on AWS/Azure cost endpoints | `60` |
+| `GEMINI_API_KEY` | Google Gemini API key. Server-side only; never sent to the frontend. | — |
+| `AI_INSIGHT_ENABLED` | Enable Gemini explanations of selected cost events | `false` |
+| `AI_INSIGHT_MODEL` | Gemini model name | `gemini-2.0-flash` |
+| `AI_INSIGHT_MAX_OUTPUT_TOKENS` | Max tokens for a single insight response | `512` |
+| `AI_INSIGHT_TIMEOUT_SECONDS` | Gemini request timeout | `12` |
+| `AI_INSIGHT_PERCENTAGE_THRESHOLD` | Minimum absolute percentage change to send to Gemini | `10.00` |
+| `AI_INSIGHT_ABSOLUTE_THRESHOLD` | Minimum absolute cost change to send to Gemini | `50.00` |
+| `AI_INSIGHT_MAX_EVENTS` | Maximum cost events explained per insights request | `3` |
+| `AI_INSIGHT_CACHE_TTL_SECONDS` | Redis TTL for successful AI insights | `3600` |
 
 > **Note:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are used by
 > `docker-compose.yml` to initialise the PostgreSQL container. They are only

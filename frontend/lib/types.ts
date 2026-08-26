@@ -74,4 +74,38 @@ export type CostInsight = {
   currency: string;
 };
 
-export type DashboardInsights = { insights: CostInsight[] };
+export type AIInsightStatus =
+  | "ready"
+  | "pending"
+  | "disabled"
+  | "empty"
+  | "unavailable"
+  | "quota_exceeded"
+  | "timeout"
+  | "invalid";
+
+export type AIInsight = {
+  title: string;
+  summary: string;
+  severity: "low" | "medium" | "high";
+  likely_cause: string;
+  recommended_action: string;
+  event_type: "cost_increase" | "cost_decrease";
+  provider: string | null;
+  service: string | null;
+  current_cost: string;
+  previous_cost: string;
+  absolute_change: string;
+  percentage_change: string | null;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  source: string;
+};
+
+export type DashboardInsights = {
+  insights: CostInsight[];
+  ai_insights: AIInsight[];
+  ai_status: AIInsightStatus;
+  ai_message: string | null;
+};

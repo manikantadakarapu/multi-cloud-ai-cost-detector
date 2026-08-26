@@ -36,7 +36,7 @@ export function formatPercent(value: string | null) {
 export function formatDateLabel(value: string) {
   const date = new Date(`${value}T12:00:00Z`);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
 }
 
 export function titleCaseProvider(provider: string) {
