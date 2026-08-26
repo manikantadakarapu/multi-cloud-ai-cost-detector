@@ -3,7 +3,15 @@
 import { useRouter } from "next/navigation";
 import { clearAuth, getStoredUser, logout } from "../lib/api/client";
 
-export default function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function Shell({
+  children,
+  activeTab = "dashboard",
+  onTabChange,
+}: Readonly<{
+  children: React.ReactNode;
+  activeTab?: "dashboard" | "explorer";
+  onTabChange?: (tab: "dashboard" | "explorer") => void;
+}>) {
   const router = useRouter();
   const user = getStoredUser();
 
@@ -20,16 +28,45 @@ export default function Shell({ children }: Readonly<{ children: React.ReactNode
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-brand"><span className="brand-mark small">MC</span><span>Cost Detector</span></div>
+        <div className="sidebar-brand">
+          <span className="brand-mark small">MC</span>
+          <span>Cost Detector</span>
+        </div>
         <nav aria-label="Primary navigation">
-          <a className="nav-link active" href="#dashboard"><span aria-hidden="true">▦</span> Dashboard</a>
+          <button
+            type="button"
+            className={`nav-link ${activeTab === "dashboard" ? "active" : ""}`}
+            style={{ width: "100%", border: 0, textAlign: "left", cursor: "pointer" }}
+            onClick={() => onTabChange?.("dashboard")}
+          >
+            <span aria-hidden="true">▦</span> Dashboard
+          </button>
+          <button
+            type="button"
+            className={`nav-link ${activeTab === "explorer" ? "active" : ""}`}
+            style={{ width: "100%", border: 0, textAlign: "left", cursor: "pointer", marginTop: "4px" }}
+            onClick={() => onTabChange?.("explorer")}
+          >
+            <span aria-hidden="true">🔍</span> Cost Explorer
+          </button>
         </nav>
-        <div className="sidebar-footer"><span className="status-dot" /> Live analytics</div>
+        <div className="sidebar-footer">
+          <span className="status-dot" /> Live analytics
+        </div>
       </aside>
       <div className="content-column">
         <header className="topbar">
-          <div><p className="eyebrow">Workspace overview</p><h2>Dashboard</h2></div>
-          <div className="user-menu"><div className="avatar">{user?.full_name?.slice(0, 1).toUpperCase() || "U"}</div><span className="user-name">{user?.full_name || "User"}</span><button className="ghost-button" onClick={handleLogout}>Sign out</button></div>
+          <div>
+            <p className="eyebrow">Workspace overview</p>
+            <h2>{activeTab === "explorer" ? "Cost Explorer" : "Dashboard"}</h2>
+          </div>
+          <div className="user-menu">
+            <div className="avatar">{user?.full_name?.slice(0, 1).toUpperCase() || "U"}</div>
+            <span className="user-name">{user?.full_name || "User"}</span>
+            <button className="ghost-button" onClick={handleLogout}>
+              Sign out
+            </button>
+          </div>
         </header>
         <main className="main-content">{children}</main>
       </div>

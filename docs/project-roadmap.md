@@ -197,6 +197,25 @@ query or modify cloud resources.
 
 ---
 
+### Sprint 1.6 — Cost Explorer & Drill-Down ✅ Complete
+
+**Focus:** Deliver a provider-independent Cost Explorer service and interactive
+drill-down UI allowing users to filter, slice, and investigate multi-cloud spend.
+
+| Deliverable | Status |
+| ----------- | ------ |
+| Normalized `CostRecord`, `ExplorerQuery`, and `ExplorerResponse` schemas | ✅ Delivered |
+| Multi-dimensional `CostExplorerService` with automated rollups | ✅ Delivered |
+| Authenticated `GET /api/v1/explorer` endpoint with rate limiting | ✅ Delivered |
+| Redis query caching with SHA-256 query digests and graceful fallback | ✅ Delivered |
+| Interactive drill-down UI with filters, breakdowns, trend chart, and line items | ✅ Delivered |
+| Architecture documentation, ADR-0009, and full test suite | ✅ Delivered |
+
+**Exit criteria:** authenticated users can explore and filter multi-cloud spend
+across providers, services, regions, accounts, and dates with sub-second drill-down.
+
+---
+
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in

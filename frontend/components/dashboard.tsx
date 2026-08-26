@@ -5,6 +5,7 @@ import { ApiError, getDashboardInsights, getDashboardSummary } from "../lib/api/
 import { aiExplanationNotice } from "../lib/ai-insights";
 import { formatDateLabel, formatMoney, formatPercent, getDateRange, titleCaseProvider } from "../lib/dates";
 import type { AIInsight, CostInsight, DashboardInsights, DashboardSummary, DatePreset } from "../lib/types";
+import CostExplorer from "./explorer";
 import Shell from "./shell";
 
 function EmptyState({ message }: { message: string }) { return <div className="empty-state">{message}</div>; }
@@ -104,6 +105,7 @@ function Insights({
   );
 }
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer">("dashboard");
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
@@ -149,5 +151,131 @@ export default function Dashboard() {
 
   useEffect(() => { void loadDashboard(); }, [loadDashboard]);
 
-  return <Shell><section className="dashboard-header" id="dashboard"><div><p className="eyebrow">Multi-cloud visibility</p><h1>Good morning, here&apos;s the spend picture.</h1><p className="muted">Track the signals that matter across your cloud estate.</p></div><div className="date-control" aria-label="Dashboard date range">{(["7d", "30d", "month"] as DatePreset[]).map((option) => <button key={option} className={preset === option ? "selected" : ""} onClick={() => setPreset(option)}>{option === "7d" ? "Last 7 days" : option === "30d" ? "Last 30 days" : "Current month"}</button>)}</div></section>{error ? <div className="error-banner" role="alert"><strong>Unable to load cost data.</strong><span>{error}</span><button className="ghost-button" onClick={() => void loadDashboard()}>Try again</button></div> : loading ? <LoadingDashboard /> : !summary ? <EmptyState message="No cost data available for this period." /> : <><section className="dashboard-grid"><article className="metric-card primary"><span className="card-label">Total cloud spend</span><strong className="metric-value">{formatMoney(summary.overview.total_cost, summary.overview.currency)}</strong><span className={`change ${Number(summary.overview.absolute_change) >= 0 ? "up" : "down"}`}>{Number(summary.overview.absolute_change) >= 0 ? "↑" : "↓"} {formatPercent(summary.overview.percentage_change)} <small>vs previous period</small></span><span className="period">{summary.overview.period_start} → {summary.overview.period_end}</span></article><article className="metric-card"><span className="card-label">Previous period</span><strong className="metric-value compact">{formatMoney(summary.overview.previous_period_cost, summary.overview.currency)}</strong><span className="metric-note">Baseline for comparison</span></article><article className="panel provider-panel"><div className="panel-heading"><div><span className="card-label">Provider distribution</span><h3>Where spend is landing</h3></div></div><ProviderBreakdown summary={summary} /></article><article className="panel trend-panel"><div className="panel-heading"><div><span className="card-label">Daily trend</span><h3>Cloud spend over time</h3></div><span className="currency-badge">{summary.overview.currency}</span></div><TrendChart points={summary.trend} currency={summary.overview.currency} /></article><article className="panel services-panel"><div className="panel-heading"><div><span className="card-label">Top services</span><h3>Highest-cost services</h3></div></div>{summary.services.length ? <div className="service-list">{summary.services.slice(0, 5).map((service) => <div className="service-row" key={`${service.provider}-${service.service_name}`}><div><strong>{service.service_name}</strong><span>{titleCaseProvider(service.provider)} · {formatPercent(service.percentage)} of total</span></div><strong>{formatMoney(service.cost, summary.overview.currency)}</strong></div>)}</div> : <EmptyState message="No cost data available for this period." />}</article><article className="panel insights-panel"><div className="panel-heading"><div><span className="card-label">Cost Insights</span><h3>Signals worth your attention</h3></div><span className="insight-badge">{insights?.ai_status === "ready" ? "Measured + AI" : "Rule-based"}</span></div><Insights payload={insights} currency={summary.overview.currency} loading={insightsLoading} error={insightsError} /></article></section></>}</Shell>;
+  return (
+    <Shell activeTab={activeTab} onTabChange={setActiveTab}>
+      <div className="view-tabs">
+        <button
+          type="button"
+          className={`view-tab ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => setActiveTab("dashboard")}
+        >
+          Overview Dashboard
+        </button>
+        <button
+          type="button"
+          className={`view-tab ${activeTab === "explorer" ? "active" : ""}`}
+          onClick={() => setActiveTab("explorer")}
+        >
+          Cost Explorer & Drill-Down
+        </button>
+      </div>
+
+      {activeTab === "explorer" ? (
+        <CostExplorer />
+      ) : (
+        <>
+          <section className="dashboard-header" id="dashboard">
+            <div>
+              <p className="eyebrow">Multi-cloud visibility</p>
+              <h1>Good morning, here&apos;s the spend picture.</h1>
+              <p className="muted">Track the signals that matter across your cloud estate.</p>
+            </div>
+            <div className="date-control" aria-label="Dashboard date range">
+              {(["7d", "30d", "month"] as DatePreset[]).map((option) => (
+                <button
+                  key={option}
+                  className={preset === option ? "selected" : ""}
+                  onClick={() => setPreset(option)}
+                >
+                  {option === "7d" ? "Last 7 days" : option === "30d" ? "Last 30 days" : "Current month"}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {error ? (
+            <div className="error-banner" role="alert">
+              <strong>Unable to load cost data.</strong>
+              <span>{error}</span>
+              <button className="ghost-button" onClick={() => void loadDashboard()}>
+                Try again
+              </button>
+            </div>
+          ) : loading ? (
+            <LoadingDashboard />
+          ) : !summary ? (
+            <EmptyState message="No cost data available for this period." />
+          ) : (
+            <section className="dashboard-grid">
+              <article className="metric-card primary">
+                <span className="card-label">Total cloud spend</span>
+                <strong className="metric-value">{formatMoney(summary.overview.total_cost, summary.overview.currency)}</strong>
+                <span className={`change ${Number(summary.overview.absolute_change) >= 0 ? "up" : "down"}`}>
+                  {Number(summary.overview.absolute_change) >= 0 ? "↑" : "↓"} {formatPercent(summary.overview.percentage_change)} <small>vs previous period</small>
+                </span>
+                <span className="period">{summary.overview.period_start} → {summary.overview.period_end}</span>
+              </article>
+              <article className="metric-card">
+                <span className="card-label">Previous period</span>
+                <strong className="metric-value compact">{formatMoney(summary.overview.previous_period_cost, summary.overview.currency)}</strong>
+                <span className="metric-note">Baseline for comparison</span>
+              </article>
+              <article className="panel provider-panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="card-label">Provider distribution</span>
+                    <h3>Where spend is landing</h3>
+                  </div>
+                </div>
+                <ProviderBreakdown summary={summary} />
+              </article>
+              <article className="panel trend-panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="card-label">Daily trend</span>
+                    <h3>Cloud spend over time</h3>
+                  </div>
+                  <span className="currency-badge">{summary.overview.currency}</span>
+                </div>
+                <TrendChart points={summary.trend} currency={summary.overview.currency} />
+              </article>
+              <article className="panel services-panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="card-label">Top services</span>
+                    <h3>Highest-cost services</h3>
+                  </div>
+                </div>
+                {summary.services.length ? (
+                  <div className="service-list">
+                    {summary.services.slice(0, 5).map((service) => (
+                      <div className="service-row" key={`${service.provider}-${service.service_name}`}>
+                        <div>
+                          <strong>{service.service_name}</strong>
+                          <span>{titleCaseProvider(service.provider)} · {formatPercent(service.percentage)} of total</span>
+                        </div>
+                        <strong>{formatMoney(service.cost, summary.overview.currency)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState message="No cost data available for this period." />
+                )}
+              </article>
+              <article className="panel insights-panel">
+                <div className="panel-heading">
+                  <div>
+                    <span className="card-label">Cost Insights</span>
+                    <h3>Signals worth your attention</h3>
+                  </div>
+                  <span className="insight-badge">{insights?.ai_status === "ready" ? "Measured + AI" : "Rule-based"}</span>
+                </div>
+                <Insights payload={insights} currency={summary.overview.currency} loading={insightsLoading} error={insightsError} />
+              </article>
+            </section>
+          )}
+        </>
+      )}
+    </Shell>
+  );
 }

@@ -1,4 +1,4 @@
-import type { AuthResponse, DashboardInsights, DashboardSummary, TokenResponse } from "../types";
+import type { AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -141,4 +141,28 @@ export function getDashboardInsights(
     include_ai: includeAi ? "true" : "false",
   });
   return request<DashboardInsights>(`/dashboard/insights?${query.toString()}`);
+}
+
+export function getExplorerData(params: {
+  start_date: string;
+  end_date: string;
+  provider?: string;
+  account_id?: string;
+  service?: string;
+  region?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const query = new URLSearchParams({
+    start_date: params.start_date,
+    end_date: params.end_date,
+  });
+  if (params.provider) query.set("provider", params.provider);
+  if (params.account_id) query.set("account_id", params.account_id);
+  if (params.service) query.set("service", params.service);
+  if (params.region) query.set("region", params.region);
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
+
+  return request<ExplorerResponse>(`/explorer?${query.toString()}`);
 }

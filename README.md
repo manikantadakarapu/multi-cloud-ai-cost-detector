@@ -17,13 +17,14 @@ unexpected cost spikes, idle resources, and optimisation opportunities. Long
 term it will expose AI-driven recommendations that engineering and platform
 teams can act on directly.
 
-> **Status:** Sprint 1.5 — Intelligent cost insights complete.
+> **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
-> aggregation, Redis caching/rate limiting, and GCP support are complete.
-> All cost endpoints are now JWT-protected. The Next.js dashboard consumes the
-> authenticated dashboard contracts with live analytics, deterministic insights,
-> and optional Gemini explanations of meaningful cost changes.
+> aggregation, Redis caching/rate limiting, GCP support, intelligent Gemini insights (Sprint 1.5),
+> and Cost Explorer & Drill-Down (Sprint 1.6) are complete.
+> All cost endpoints are JWT-protected. The Next.js dashboard provides live overview
+> metrics, deterministic insights, Gemini explanations, and an interactive Cost Explorer
+> allowing multi-dimensional filtering across providers, services, regions, accounts, and dates.
 
 ## Table of Contents
 
