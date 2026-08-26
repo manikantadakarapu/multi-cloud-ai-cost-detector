@@ -109,7 +109,6 @@ export type DashboardInsights = {
   ai_status: AIInsightStatus;
   ai_message: string | null;
 };
-
 export type CostRecord = {
   date: string;
   provider: string;

@@ -215,7 +215,6 @@ drill-down UI allowing users to filter, slice, and investigate multi-cloud spend
 across providers, services, regions, accounts, and dates with sub-second drill-down.
 
 ---
-
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in

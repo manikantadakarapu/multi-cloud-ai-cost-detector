@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Top-level view switcher between Overview Dashboard and Cost Explorer & Drill-Down in `frontend/components/shell.tsx` and `frontend/components/dashboard.tsx`.
   - Focused test suite (`tests/test_explorer.py`, `frontend/lib/explorer.test.ts`) covering schemas, filtering, rollups, caching, auth, and UI formatting.
   - Architectural Decision Record (`docs/adr/ADR-0009-cost-explorer-drilldown.md`).
-
 - Sprint 1.5 Intelligent Cost Insights:
   - Provider-independent `CostEvent` model and configurable threshold selection.
   - Facts-only Gemini context builder and dedicated `app/services/ai/` loop.
