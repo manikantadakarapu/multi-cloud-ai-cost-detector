@@ -12,7 +12,7 @@
 > contributors who need to understand how the system is built, where it is
 > headed, and where the seams are for extension.
 >
-> **Last Updated:** 2026-08-21 (Sprint 1.3)
+> **Last Updated:** 2026-08-23 (Sprint 1.5)
 
 ---
 
@@ -52,17 +52,15 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 1.3):** the foundation layers are live — application
+**Current state (Sprint 1.5):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
 health probe, configuration, cloud provider integrations, unified cost
-aggregation, Redis caching, rate limiting, JWT Bearer authentication, and
-deterministic cost analytics. The analytics layer remains intentionally
-descriptive; anomaly detection, forecasting, and AI recommendations are
-future work. A frontend-ready dashboard contract and deterministic insight
-boundary now sit above analytics; the Next.js frontend MVP consumes those
-contracts through a centralized JWT-aware client. No AI or LLM is called.
-The AI engine remains planned for Sprint 0.5; its seams are described below
-as forward-looking contracts.
+aggregation, Redis caching, rate limiting, JWT Bearer authentication,
+deterministic cost analytics, and a Next.js dashboard. Gemini can explain
+selected deterministic cost events. Anomaly detection, forecasting, and
+autonomous recommendations remain future work. AI insights explain
+deterministic cost events. They do not independently query or modify cloud
+resources.
 
 ---
 
@@ -78,7 +76,7 @@ graph TD
     DB[("PostgreSQL 16")]
     Redis[("Redis<br/>(live)")]
     Cloud["Cloud Providers<br/>AWS · Azure · GCP"]
-    AI["AI Providers<br/>OpenAI · Gemini · Claude · Azure OpenAI"]
+    AI["Gemini cost insights<br/>(Sprint 1.5 — live)"]
 
     User --> FE
     User --> API
@@ -708,33 +706,38 @@ check is operationally indistinguishable from a down instance.
 
 ### AI Layer
 
-> **Status:** Planned — Sprint 0.5. Designed-for via the provider
-> abstraction (ADR-0005). Not yet implemented.
+> **Status:** Live for Gemini cost-event explanations — Sprint 1.5.
+> Multi-provider recommendation generation remains planned (ADR-0005).
 
-The AI layer generates cost recommendations. It is built behind an
-abstraction so the choice of model — OpenAI, Gemini, Claude, or Azure
-OpenAI — is a configuration switch, not a code change.
+AI insights explain deterministic cost events. They do not independently
+query or modify cloud resources. The LLM never sees raw cloud-provider SDK
+responses.
 
 ```mermaid
 graph TD
-    Svc["Service Layer"] -->|"recommend()"| Provider["AIProvider<br/>(abstract interface)"]
-    Provider -->|"impl"| OpenAI["OpenAIProvider"]
-    Provider -->|"impl"| Gemini["GeminiProvider"]
-    Provider -->|"impl"| Claude["ClaudeProvider"]
-    Provider -->|"impl"| AzureOAI["AzureOpenAIProvider"]
-    Provider -->|"impl"| Future["Future Providers"]
+    Cloud["AWS / Azure / GCP"] --> Norm["Normalized Cost Data"]
+    Norm --> Analytics["Analytics Engine"]
+    Analytics --> Event["Deterministic Cost Event"]
+    Event --> Context["Structured AI Context"]
+    Context --> Gemini["Gemini"]
+    Gemini --> Insight["Structured AI Insight"]
+    Insight --> Dash["Dashboard"]
+    Analytics --> Determ["Deterministic insights"]
+    Determ --> Dash
 ```
 
-| Concern | Plan |
-| ------- | ---- |
-| Interface | A common `AIProvider` protocol with `recommend(cost_data) -> Recommendation`. |
-| Selection | `Settings.ai_provider` selects the active implementation at startup. |
-| Fallback | A secondary provider can be configured for graceful degradation when the primary is unavailable. |
-| Cost data shape | The normalised cost schema (from the cloud integration layer) is the prompt input — no provider-specific serialisation in the service layer. |
-| Output | Ranked recommendations with estimated savings, confidence, and a human-readable rationale. |
+| Concern | Implementation |
+| ------- | -------------- |
+| Selection | Configurable percentage or absolute thresholds; max event cap. |
+| Input | Facts-only `AIInsightContext` built from `CostEvent`. |
+| Model | `AI_INSIGHT_MODEL` (default `gemini-2.0-flash`) via `GEMINI_API_KEY`. |
+| Output | Validated JSON: title, summary, severity, likely_cause, recommended_action. Measured costs are attached from the event. |
+| Cache | Existing Redis client, key `ai-insight:{user}:{provider}:{service}:{period}:{model}:{event-hash}`. |
+| Failure | Dashboard returns deterministic insights plus `ai_status` (`unavailable`, `timeout`, `quota_exceeded`, `invalid`). |
 
-The abstraction is the single most important seam for avoiding vendor
-lock-in. It is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
+The longer-term multi-provider protocol remains documented in
+[ADR-0005](adr/ADR-0005-ai-provider-abstraction.md). Sprint 1.5 is recorded
+in [ADR-0008](adr/ADR-0008-gemini-cost-insights.md).
 
 ### Cloud Integration Layer
 

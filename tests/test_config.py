@@ -56,6 +56,25 @@ def test_gcp_billing_settings_from_env(monkeypatch) -> None:
     assert settings.gcp_billing_table == "gcp_billing_export_v1"
 
 
+def test_ai_insight_settings_defaults() -> None:
+    settings = Settings(JWT_SECRET_KEY="test-secret")
+    assert settings.ai_insight_enabled is False
+    assert settings.gemini_api_key is None
+    assert settings.ai_insight_model == "gemini-2.0-flash"
+    assert settings.ai_insight_max_output_tokens == 512
+
+
+def test_ai_insight_settings_from_env(monkeypatch) -> None:
+    monkeypatch.setenv("AI_INSIGHT_ENABLED", "true")
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-key")
+    monkeypatch.setenv("AI_INSIGHT_MODEL", "gemini-2.0-flash")
+    monkeypatch.setenv("AI_INSIGHT_MAX_OUTPUT_TOKENS", "256")
+    settings = Settings(JWT_SECRET_KEY="test-secret")
+    assert settings.ai_insight_enabled is True
+    assert settings.gemini_api_key == "secret-key"
+    assert settings.ai_insight_max_output_tokens == 256
+
+
 def test_shared_infrastructure_settings_defaults() -> None:
     """Shared infrastructure settings expose the new Sprint 0.7 defaults."""
     settings = Settings(JWT_SECRET_KEY="test-secret")

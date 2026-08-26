@@ -26,5 +26,6 @@ npm test
 npm run build
 ```
 
-The dashboard uses live authenticated API responses and does not include
-hardcoded cost values or an AI/LLM integration.
+The dashboard uses live authenticated API responses. Optional Gemini
+explanations are requested from the backend; the frontend never receives a
+Gemini API key.

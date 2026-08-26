@@ -132,7 +132,13 @@ export function getDashboardSummary(params: { start_date: string; end_date: stri
   return request<DashboardSummary>(`/dashboard/summary?${query.toString()}`);
 }
 
-export function getDashboardInsights(params: { start_date: string; end_date: string }) {
-  const query = new URLSearchParams(params);
+export function getDashboardInsights(
+  params: { start_date: string; end_date: string },
+  includeAi = true,
+) {
+  const query = new URLSearchParams({
+    ...params,
+    include_ai: includeAi ? "true" : "false",
+  });
   return request<DashboardInsights>(`/dashboard/insights?${query.toString()}`);
 }

@@ -11,7 +11,7 @@
 > hiring managers who need to understand where the project is headed and how
 > the near-term work ladders up to the long-term vision.
 >
-> **Last Updated:** 2026-08-21 (Sprint 1.3)
+> **Last Updated:** 2026-08-23 (Sprint 1.5)
 >
 > **Status legend:** ✅ Complete · 🚧 In Progress · ⏳ Planned · 🔭 Future
 
@@ -177,6 +177,26 @@ adding AI/LLM, forecasting, or new backend architecture.
 
 ---
 
+### Sprint 1.5 — Intelligent Cost Insights ✅ Complete
+
+**Focus:** Generate a concise Gemini explanation of meaningful deterministic
+cost events and display it in the existing dashboard.
+
+| Deliverable | Status |
+| ----------- | ------ |
+| Typed cost events and threshold selection | ✅ Delivered |
+| Facts-only Gemini context and structured validation | ✅ Delivered |
+| Redis-cached AI insights with dashboard-safe failure states | ✅ Delivered |
+| Cost Insights UI distinguishing measured facts from AI explanations | ✅ Delivered |
+
+**Exit criteria:** a meaningful cost change can be explained by Gemini, and
+the dashboard remains available when AI is disabled or fails.
+
+AI insights explain deterministic cost events. They do not independently
+query or modify cloud resources.
+
+---
+
 ### Sprint 0.1 — Backend Foundation ✅ Complete
 
 Shipped the production backend foundation. The full changelog entry is in
@@ -217,6 +237,8 @@ Highlights:
 | 1.1 | ✅ Complete | Cost Analytics & Intelligence Foundation — daily normalization, analytics APIs, Decimal calculations, currency validation, cost drivers, and documentation. |
 | 1.2 | ✅ Complete | Frontend Readiness & Intelligence Contracts — dashboard summary, deterministic insights, explicit schemas, cache reuse, and documentation. |
 | 1.3 | ✅ Complete | Frontend MVP — Next.js dashboard shell, JWT integration, live analytics views, date presets, responsive states, and quality gates. |
+| 1.4 | ✅ Complete | Live dashboard integration — frontend consumes live backend cost data. |
+| 1.5 | ✅ Complete | Intelligent cost insights — Gemini explanations of selected deterministic cost events with dashboard fallback. |
 
 ---
 

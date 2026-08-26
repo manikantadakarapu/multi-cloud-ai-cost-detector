@@ -45,7 +45,8 @@ OPENAPI_TAGS: list[dict[str, str]] = [
     {
         "name": "dashboard",
         "description": (
-            "Frontend-ready dashboard summary and deterministic insight contracts."
+            "Frontend-ready dashboard summary, deterministic insights, and "
+            "optional Gemini explanations of selected cost events."
         ),
     },
 ]
