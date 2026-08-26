@@ -52,13 +52,13 @@ so that the addition of a new cloud provider or a new AI vendor is a
 localised change, not a cross-cutting rewrite. The provider-abstraction
 contract is recorded in [ADR-0005](adr/ADR-0005-ai-provider-abstraction.md).
 
-**Current state (Sprint 1.5):** the foundation layers are live — application
+**Current state (Sprint 1.6):** the foundation layers are live — application
 factory, async database access, migration management, structured logging,
 health probe, configuration, cloud provider integrations, unified cost
 aggregation, Redis caching, rate limiting, JWT Bearer authentication,
-deterministic cost analytics, and a Next.js dashboard. Gemini can explain
-selected deterministic cost events. Anomaly detection, forecasting, and
-autonomous recommendations remain future work. AI insights explain
+deterministic cost analytics, intelligent AI insights with Gemini, and an
+interactive Cost Explorer & Drill-Down capability on the Next.js dashboard. Anomaly detection, forecasting, and
+remediation remain future work. AI insights explain
 deterministic cost events. They do not independently query or modify cloud
 resources.
 

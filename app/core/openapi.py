@@ -49,6 +49,13 @@ OPENAPI_TAGS: list[dict[str, str]] = [
             "optional Gemini explanations of selected cost events."
         ),
     },
+    {
+        "name": "explorer",
+        "description": (
+            "Multi-dimensional Cost Explorer queries, spend drill-downs across "
+            "providers, accounts, services, regions, and dates."
+        ),
+    },
 ]
 
 

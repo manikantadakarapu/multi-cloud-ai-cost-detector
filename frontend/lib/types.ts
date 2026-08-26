@@ -109,3 +109,61 @@ export type DashboardInsights = {
   ai_status: AIInsightStatus;
   ai_message: string | null;
 };
+export type CostRecord = {
+  date: string;
+  provider: string;
+  account_id: string | null;
+  account_name: string | null;
+  service: string;
+  region: string | null;
+  cost: string;
+  currency: string;
+};
+
+export type DimensionTotal = {
+  key: string;
+  label: string;
+  cost: string;
+  percentage: string;
+  currency: string;
+  record_count: number;
+};
+
+export type DailyCostRecord = {
+  date: string;
+  cost: string;
+  currency: string;
+};
+
+export type DimensionBreakdowns = {
+  by_provider: DimensionTotal[];
+  by_service: DimensionTotal[];
+  by_region: DimensionTotal[];
+  by_account: DimensionTotal[];
+  by_date: DailyCostRecord[];
+};
+
+export type ExplorerOverview = {
+  total_cost: string;
+  currency: string;
+  record_count: number;
+  start_date: string;
+  end_date: string;
+};
+
+export type AvailableFilters = {
+  providers: string[];
+  accounts: string[];
+  services: string[];
+  regions: string[];
+};
+
+export type ExplorerResponse = {
+  overview: ExplorerOverview;
+  records: CostRecord[];
+  dimension_totals: DimensionBreakdowns;
+  available_filters: AvailableFilters;
+  total_records: number;
+  limit: number;
+  offset: number;
+};

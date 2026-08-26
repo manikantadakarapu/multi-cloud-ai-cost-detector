@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.6 Cost Explorer & Drill-Down:
+  - Provider-independent `CostRecord`, `DimensionTotal`, `ExplorerQuery`, and `ExplorerResponse` schemas.
+  - Multi-dimensional Cost Explorer service (`app/services/explorer/service.py`) supporting filtering by provider, service, region, account/project, and date range.
+  - Authenticated and rate-limited `GET /api/v1/explorer` endpoint with automated multi-dimensional rollups and pagination.
+  - Deterministic Redis query caching with SHA-256 query digest keys and graceful live fallback.
+  - Frontend interactive Cost Explorer component (`frontend/components/explorer.tsx`) with drill-down breakdown lists, daily trend chart, line-item records table, and active filter removal pills.
+  - Top-level view switcher between Overview Dashboard and Cost Explorer & Drill-Down in `frontend/components/shell.tsx` and `frontend/components/dashboard.tsx`.
+  - Focused test suite (`tests/test_explorer.py`, `frontend/lib/explorer.test.ts`) covering schemas, filtering, rollups, caching, auth, and UI formatting.
+  - Architectural Decision Record (`docs/adr/ADR-0009-cost-explorer-drilldown.md`).
 - Sprint 1.5 Intelligent Cost Insights:
   - Provider-independent `CostEvent` model and configurable threshold selection.
   - Facts-only Gemini context builder and dedicated `app/services/ai/` loop.
