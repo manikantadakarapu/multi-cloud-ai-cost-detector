@@ -103,7 +103,6 @@ function Insights({
     </div>
   );
 }
-
 export default function Dashboard() {
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
