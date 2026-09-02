@@ -51,6 +51,8 @@ class AWSCloudProvider(CloudProvider):
         Lets credential errors propagate so callers can surface them
         via :meth:`validate_credentials` or :meth:`get_costs`.
         """
+        if app_settings.aws_use_mock_data:
+            return None
         self._service._ensure_client()
         return None
 
@@ -61,6 +63,10 @@ class AWSCloudProvider(CloudProvider):
         except (AWSCredentialsError, NoCredentialsError):
             return False
         return True
+
+    def health_check(self) -> bool:
+        """Return whether AWS Cost Explorer can be reached with current settings."""
+        return self._service.health_check()
 
     async def get_costs(
         self,

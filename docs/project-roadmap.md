@@ -257,6 +257,7 @@ Highlights:
 | 1.3 | ✅ Complete | Frontend MVP — Next.js dashboard shell, JWT integration, live analytics views, date presets, responsive states, and quality gates. |
 | 1.4 | ✅ Complete | Live dashboard integration — frontend consumes live backend cost data. |
 | 1.5 | ✅ Complete | Intelligent cost insights — Gemini explanations of selected deterministic cost events with dashboard fallback. |
+| 1.7 | ✅ Complete | Deterministic Cost Anomalies — median/MAD baselines, authenticated filtering API, Redis caching, and Explorer drill-down. |
 
 ---
 

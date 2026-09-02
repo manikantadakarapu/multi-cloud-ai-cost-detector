@@ -9,7 +9,13 @@ from typing import Any
 
 import boto3
 from botocore.config import Config as BotocoreConfig
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import (
+    BotoCoreError,
+    ClientError,
+    EndpointConnectionError,
+    NoCredentialsError,
+    PartialCredentialsError,
+)
 
 from app.core.config import Settings
 from app.services.aws.exceptions import (
@@ -53,6 +59,10 @@ class CostExplorerService:
                 session_kwargs["aws_secret_access_key"] = (
                     self._settings.aws_secret_access_key
                 )
+                if self._settings.aws_session_token:
+                    session_kwargs["aws_session_token"] = (
+                        self._settings.aws_session_token
+                    )
 
             session = boto3.Session(**session_kwargs)
             self._client = session.client(
@@ -63,7 +73,7 @@ class CostExplorerService:
                     read_timeout=30,
                 ),
             )
-        except NoCredentialsError as e:
+        except (NoCredentialsError, PartialCredentialsError) as e:
             logger.error(
                 "aws_credentials_not_found",
                 extra={"region": self._settings.aws_default_region},
@@ -71,9 +81,81 @@ class CostExplorerService:
             raise AWSCredentialsError("AWS credentials not found") from e
         except AWSCostExplorerError:
             raise
-        except Exception as e:
-            logger.error("aws_client_creation_failed", extra={"error": str(e)})
-            raise AWSCredentialsError(f"Failed to create AWS client: {e}") from e
+        except (BotoCoreError, ValueError) as e:
+            logger.error(
+                "aws_client_creation_failed", extra={"error_type": type(e).__name__}
+            )
+            raise AWSServiceError("Failed to create AWS Cost Explorer client") from e
+
+    def _mock_response(
+        self, start_date: date, end_date: date, granularity: str
+    ) -> dict[str, Any]:
+        """Return deterministic local data when explicitly enabled."""
+        if granularity == self.GRANULARITY_MONTHLY:
+            services = [
+                {"service_name": "AmazonEC2", "cost": 842.50},
+                {"service_name": "AmazonS3", "cost": 126.25},
+                {"service_name": "AmazonRDS", "cost": 318.75},
+            ]
+            total = sum(item["cost"] for item in services)
+            daily_costs = []
+        else:
+            days = max((end_date - start_date).days + 1, 1)
+            services = [
+                {"service_name": "AmazonEC2", "cost": round(28.08 * days, 2)},
+                {"service_name": "AmazonS3", "cost": round(4.21 * days, 2)},
+                {"service_name": "AmazonRDS", "cost": round(10.63 * days, 2)},
+            ]
+            total = round(sum(item["cost"] for item in services), 2)
+            daily = round(total / days, 2)
+            daily_costs = [
+                {
+                    "date": (
+                        start_date.fromordinal(start_date.toordinal() + offset)
+                    ).isoformat(),
+                    "cost": daily,
+                }
+                for offset in range(days)
+            ]
+        return {
+            "provider": "aws",
+            "currency": "USD",
+            "total_cost": total,
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat(),
+                "granularity": granularity,
+            },
+            "services": services,
+            "daily_costs": daily_costs,
+        }
+
+    def health_check(self) -> bool:
+        """Verify that AWS Cost Explorer is reachable with configured credentials."""
+        if self._settings.aws_use_mock_data:
+            return True
+        try:
+            self._ensure_client()
+            today = date.today()
+            self._client.get_cost_and_usage(
+                TimePeriod={
+                    "Start": (today.fromordinal(today.toordinal() - 1)).isoformat(),
+                    "End": today.isoformat(),
+                },
+                Granularity=self.GRANULARITY_DAILY,
+                Metrics=[self.METRIC_UNBLENDED_COST],
+            )
+            return True
+        except (
+            NoCredentialsError,
+            PartialCredentialsError,
+            ClientError,
+            EndpointConnectionError,
+            BotoCoreError,
+            AWSCostExplorerError,
+        ):
+            logger.warning("aws_cost_explorer_health_check_failed")
+            return False
 
     def _validate_date_range(self, start_date: date, end_date: date) -> None:
         """Validate date range for Cost Explorer API."""
@@ -204,6 +286,10 @@ class CostExplorerService:
                 "services": [],
             }
 
+        if self._settings.aws_use_mock_data:
+            logger.info("aws_cost_explorer_mock_data_enabled")
+            return self._mock_response(start_date, end_date, granularity)
+
         if granularity not in (self.GRANULARITY_DAILY, self.GRANULARITY_MONTHLY):
             raise AWSInvalidDateRangeError(f"Invalid granularity: {granularity}")
 
@@ -243,19 +329,22 @@ class CostExplorerService:
             }
             return normalized
 
-        except NoCredentialsError as e:
-            logger.error("aws_credentials_missing", extra={"error": str(e)})
+        except (NoCredentialsError, PartialCredentialsError) as e:
+            logger.error(
+                "aws_credentials_missing", extra={"error_type": type(e).__name__}
+            )
             raise AWSCredentialsError("AWS credentials not found") from e
+        except EndpointConnectionError as e:
+            logger.error("aws_cost_explorer_endpoint_unreachable")
+            raise AWSServiceError("AWS Cost Explorer endpoint is unreachable") from e
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
-            error_message = e.response.get("Error", {}).get("Message", "")
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
 
             logger.error(
                 "aws_cost_explorer_error",
                 extra={
                     "error_code": error_code,
-                    "error_message": error_message,
                     "elapsed_ms": elapsed_ms,
                 },
             )
@@ -266,20 +355,24 @@ class CostExplorerService:
                 raise AWSPermissionsError(
                     "Insufficient AWS permissions for Cost Explorer"
                 ) from e
+            if error_code in (
+                "UnrecognizedClientException",
+                "InvalidClientTokenId",
+                "SignatureDoesNotMatch",
+            ):
+                raise AWSCredentialsError("AWS credentials are invalid") from e
             if error_code == "ValidationException":
                 raise AWSInvalidDateRangeError(
-                    f"Invalid request: {error_message}"
+                    "AWS rejected the Cost Explorer request"
                 ) from e
 
-            raise AWSServiceError(f"AWS Cost Explorer error: {error_message}") from e
+            raise AWSServiceError("AWS Cost Explorer request failed") from e
         except AWSCostExplorerError:
             raise
         except Exception as e:
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             logger.error(
                 "aws_cost_explorer_unexpected_error",
-                extra={"error": str(e), "elapsed_ms": elapsed_ms},
+                extra={"error_type": type(e).__name__, "elapsed_ms": elapsed_ms},
             )
-            raise AWSServiceError(
-                f"Unexpected error querying Cost Explorer: {e}"
-            ) from e
+            raise AWSServiceError("Unexpected error querying Cost Explorer") from e

@@ -109,6 +109,36 @@ export type DashboardInsights = {
   ai_status: AIInsightStatus;
   ai_message: string | null;
 };
+
+export type AnomalySeverity = "normal" | "low" | "medium" | "high" | "critical";
+export type CostAnomaly = {
+  id: string;
+  provider: string;
+  account_id: string | null;
+  account_name: string | null;
+  service: string;
+  region: string | null;
+  date: string;
+  actual_cost: string;
+  expected_cost: string;
+  deviation_amount: string;
+  deviation_percentage: string | null;
+  anomaly_score: string;
+  severity: AnomalySeverity;
+  detection_method: string;
+  baseline_period: string;
+  currency: string;
+  created_at: string;
+};
+export type AnomalyResponse = {
+  anomalies: CostAnomaly[];
+  summary: { total: number; high_or_critical: number; by_severity: Record<AnomalySeverity, number> };
+  trend: { date: string; count: number }[];
+  start_date: string;
+  end_date: string;
+  baseline_lookback_days: number;
+  detector_version: string;
+};
 export type CostRecord = {
   date: string;
   provider: string;

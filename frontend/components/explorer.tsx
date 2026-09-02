@@ -105,12 +105,12 @@ function ExplorerTrendChart({
   );
 }
 
-export default function CostExplorer() {
+export default function CostExplorer({ initialFilters }: { initialFilters?: { provider?: string; service?: string; region?: string; account_id?: string } }) {
   const [preset, setPreset] = useState<DatePreset>("30d");
-  const [provider, setProvider] = useState<string>("");
-  const [service, setService] = useState<string>("");
-  const [region, setRegion] = useState<string>("");
-  const [accountId, setAccountId] = useState<string>("");
+  const [provider, setProvider] = useState<string>(initialFilters?.provider || "");
+  const [service, setService] = useState<string>(initialFilters?.service || "");
+  const [region, setRegion] = useState<string>(initialFilters?.region || "");
+  const [accountId, setAccountId] = useState<string>(initialFilters?.account_id || "");
   const [offset, setOffset] = useState<number>(0);
   const limit = 25;
 

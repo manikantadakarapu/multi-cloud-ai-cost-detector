@@ -109,9 +109,18 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="AWS_SECRET_ACCESS_KEY",
     )
+    aws_session_token: str | None = Field(
+        default=None,
+        validation_alias="AWS_SESSION_TOKEN",
+    )
     aws_cost_explorer_enabled: bool = Field(
         default=True,
         validation_alias="AWS_COST_EXPLORER_ENABLED",
+    )
+    aws_use_mock_data: bool = Field(
+        default=False,
+        validation_alias="AWS_USE_MOCK_DATA",
+        description="Use deterministic local AWS data instead of Cost Explorer.",
     )
 
     # --- Azure Cost Management ---
@@ -228,6 +237,37 @@ class Settings(BaseSettings):
         default=3600,
         ge=1,
         validation_alias="AI_INSIGHT_CACHE_TTL_SECONDS",
+    )
+
+    # --- Deterministic anomaly detection (Sprint 1.7) ---
+    anomaly_lookback_days: int = Field(
+        default=30, ge=7, le=365, validation_alias="ANOMALY_LOOKBACK_DAYS"
+    )
+    anomaly_min_history_points: int = Field(
+        default=7, ge=3, le=365, validation_alias="ANOMALY_MIN_HISTORY_POINTS"
+    )
+    anomaly_min_cost: Decimal = Field(
+        default=Decimal("1.00"), ge=0, validation_alias="ANOMALY_MIN_COST"
+    )
+    anomaly_min_deviation_percentage: Decimal = Field(
+        default=Decimal("20.00"),
+        ge=0,
+        validation_alias="ANOMALY_MIN_DEVIATION_PERCENTAGE",
+    )
+    anomaly_low_score: Decimal = Field(
+        default=Decimal("2.00"), ge=0, validation_alias="ANOMALY_LOW_SCORE"
+    )
+    anomaly_medium_score: Decimal = Field(
+        default=Decimal("3.00"), ge=0, validation_alias="ANOMALY_MEDIUM_SCORE"
+    )
+    anomaly_high_score: Decimal = Field(
+        default=Decimal("4.00"), ge=0, validation_alias="ANOMALY_HIGH_SCORE"
+    )
+    anomaly_critical_score: Decimal = Field(
+        default=Decimal("6.00"), ge=0, validation_alias="ANOMALY_CRITICAL_SCORE"
+    )
+    anomaly_cache_ttl_seconds: int = Field(
+        default=900, ge=1, validation_alias="ANOMALY_CACHE_TTL_SECONDS"
     )
 
     @computed_field
