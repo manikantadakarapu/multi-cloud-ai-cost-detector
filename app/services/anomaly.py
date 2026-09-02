@@ -214,8 +214,9 @@ class AnomalyDetectionService:
         )
         if query.severity:
             found = [item for item in found if item.severity is query.severity]
+        total = len(found)
         summary = AnomalySummary(
-            total=len(found),
+            total=total,
             high_or_critical=sum(
                 item.severity in {AnomalySeverity.HIGH, AnomalySeverity.CRITICAL}
                 for item in found
@@ -226,7 +227,10 @@ class AnomalyDetectionService:
             },
         )
         response = AnomalyResponse(
-            anomalies=found,
+            anomalies=found[query.offset : query.offset + query.limit],
+            total=total,
+            limit=query.limit,
+            offset=query.offset,
             summary=summary,
             trend=[
                 AnomalyTrendPoint(

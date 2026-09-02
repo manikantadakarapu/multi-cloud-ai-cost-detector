@@ -58,6 +58,8 @@ class AnomalyQuery(BaseModel):
     service: str | None = None
     region: str | None = None
     severity: AnomalySeverity | None = None
+    limit: int = Field(default=100, ge=1, le=1000)
+    offset: int = Field(default=0, ge=0)
     sort_by: Annotated[
         str,
         Field(pattern="^(anomaly_score|deviation_percentage|deviation_amount|date)$"),
@@ -98,6 +100,9 @@ class AnomalyResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     anomalies: list[Anomaly]
+    total: int = Field(..., ge=0, description="Total anomalies matching the filters.")
+    limit: int = Field(..., ge=1)
+    offset: int = Field(..., ge=0)
     summary: AnomalySummary
     trend: list[AnomalyTrendPoint]
     start_date: date_type

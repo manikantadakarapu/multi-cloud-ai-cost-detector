@@ -109,3 +109,45 @@ async def test_filters_dimensions_and_sorting():
     )
     assert len(response.anomalies) == 1
     assert response.anomalies[0].service == "Storage"
+
+
+@pytest.mark.asyncio
+async def test_filters_are_applied_before_pagination():
+    records = records_for([10] * 7 + [40], service="Compute") + records_for(
+        [10] * 7 + [35], service="Storage"
+    )
+    service = AnomalyDetectionService(explorer=FakeExplorer(records))
+    response = await service.detect(
+        AnomalyQuery(
+            **{
+                **query().model_dump(),
+                "limit": 1,
+                "offset": 1,
+                "sort_by": "deviation_amount",
+            }
+        )
+    )
+    assert response.total == 2
+    assert response.limit == 1
+    assert response.offset == 1
+    assert len(response.anomalies) == 1
+    assert response.anomalies[0].service == "Storage"
+
+
+def test_query_rejects_invalid_pagination():
+    with pytest.raises(ValueError):
+        AnomalyQuery(**{**query().model_dump(), "limit": 0})
+
+    with pytest.raises(ValueError):
+        AnomalyQuery(**{**query().model_dump(), "limit": 1001})
+
+
+def test_cache_key_changes_for_filters_and_pagination():
+    service = AnomalyDetectionService()
+    base = query()
+    assert service._cache_key(base) != service._cache_key(
+        base.model_copy(update={"service": "Storage"})
+    )
+    assert service._cache_key(base) != service._cache_key(
+        base.model_copy(update={"limit": 1})
+    )

@@ -955,6 +955,8 @@ Zero baselines use an explicit `zero_baseline` method and do not manufacture a
 percentage. New dimensions and insufficient or sparse history produce no
 anomaly. Currency is kept with each normalized dimension and provider records
 are never exposed as raw SDK objects. Results are JWT-protected, rate-limited,
-and cached in Redis with a user-scoped key containing every query and detector
-configuration value. Detection is deterministic and AI-independent; future AI
-work may explain an already detected anomaly but must not score or detect it.
+and cached in Redis with a user-scoped key containing every query, pagination
+parameter, and detector configuration value. The response includes the total
+filtered count plus a bounded page of anomalies. Detection is deterministic and
+AI-independent; future AI work may explain an already detected anomaly but must
+not score or detect it.
