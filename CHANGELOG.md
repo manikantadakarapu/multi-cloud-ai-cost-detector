@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.7 Cost Anomaly Detection:
+  - Provider-independent deterministic anomaly detection using historical median/MAD baselines.
+  - Authenticated `/api/v1/anomalies` endpoint with dimension filters, severity filtering, sorting, and pagination.
+  - Redis caching keyed by user scope, query filters, pagination, detector version, and thresholds.
+  - Cost Anomalies dashboard with severity distribution, trends, filters, pagination, and Cost Explorer drill-down.
+  - AWS session-token support, deterministic opt-in mock data, health checks, and safer error handling.
+  - Explicitly AI-independent detection; AI may explain detected anomalies in a future sprint.
+
 - Sprint 1.6 Cost Explorer & Drill-Down:
   - Provider-independent `CostRecord`, `DimensionTotal`, `ExplorerQuery`, and `ExplorerResponse` schemas.
   - Multi-dimensional Cost Explorer service (`app/services/explorer/service.py`) supporting filtering by provider, service, region, account/project, and date range.

@@ -176,11 +176,16 @@ export function getAnomalies(params: {
   region?: string;
   severity?: string;
   sort_by?: string;
+  sort_order?: string;
+  limit?: number;
+  offset?: number;
 }) {
   const query = new URLSearchParams({ start_date: params.start_date, end_date: params.end_date });
-  for (const key of ["provider", "account_id", "service", "region", "severity", "sort_by"] as const) {
+  for (const key of ["provider", "account_id", "service", "region", "severity", "sort_by", "sort_order"] as const) {
     const value = params[key];
     if (value) query.set(key, value);
   }
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
   return request<AnomalyResponse>(`/anomalies?${query.toString()}`);
 }
