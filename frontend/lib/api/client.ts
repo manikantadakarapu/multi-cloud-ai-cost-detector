@@ -1,4 +1,4 @@
-import type { AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
+import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -188,4 +188,19 @@ export function getAnomalies(params: {
   if (params.limit !== undefined) query.set("limit", String(params.limit));
   if (params.offset !== undefined) query.set("offset", String(params.offset));
   return request<AnomalyResponse>(`/anomalies?${query.toString()}`);
+}
+
+export function explainAnomaly(anomalyId: string, params: {
+  start_date: string;
+  end_date: string;
+  provider?: string;
+  account_id?: string;
+  service?: string;
+  region?: string;
+  severity?: string;
+}) {
+  return request<AnomalyExplanation>(`/anomalies/${encodeURIComponent(anomalyId)}/explanation`, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
 }

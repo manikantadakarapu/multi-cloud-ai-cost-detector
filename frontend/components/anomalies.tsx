@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError, getAnomalies } from "../lib/api/client";
+import { ApiError, explainAnomaly, getAnomalies } from "../lib/api/client";
 import { formatMoney, formatPercent, getDateRange, titleCaseProvider } from "../lib/dates";
-import type { AnomalyResponse, AnomalySeverity, CostAnomaly, DatePreset } from "../lib/types";
+import type { AnomalyExplanation, AnomalyResponse, AnomalySeverity, CostAnomaly, DatePreset } from "../lib/types";
 
 const PAGE_SIZE = 20;
 
@@ -22,6 +22,10 @@ export default function Anomalies({ onInvestigate }: { onInvestigate: (anomaly: 
   const [data, setData] = useState<AnomalyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedAnomaly, setSelectedAnomaly] = useState<CostAnomaly | null>(null);
+  const [explanation, setExplanation] = useState<AnomalyExplanation | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+  const [explanationError, setExplanationError] = useState("");
   const requestId = useRef(0);
   const range = useMemo(() => getDateRange(preset), [preset]);
 
@@ -54,6 +58,27 @@ export default function Anomalies({ onInvestigate }: { onInvestigate: (anomaly: 
 
   useEffect(() => { void load(); }, [load]);
 
+  const requestExplanation = async (anomaly: CostAnomaly) => {
+    setSelectedAnomaly(anomaly);
+    setExplanation(null);
+    setExplanationError("");
+    setExplanationLoading(true);
+    try {
+      const result = await explainAnomaly(anomaly.id, {
+        ...range,
+        provider: anomaly.provider,
+        account_id: anomaly.account_id || undefined,
+        service: anomaly.service,
+        region: anomaly.region || undefined,
+      });
+      setExplanation(result);
+    } catch (err) {
+      setExplanationError(err instanceof ApiError && err.status === 401 ? "Your session has expired. Please sign in again." : "Unable to load the AI analysis. Review the verified evidence below.");
+    } finally {
+      setExplanationLoading(false);
+    }
+  };
+
   const updateFilter = (setter: (value: string) => void, value: string) => {
     setter(value);
     setOffset(0);
@@ -77,6 +102,7 @@ export default function Anomalies({ onInvestigate }: { onInvestigate: (anomaly: 
       </div>
 
       {error ? <div className="error-banner" role="alert"><span>{error}</span><button className="ghost-button" onClick={() => void load()}>Try again</button></div> : null}
+      {selectedAnomaly ? <section className="panel anomaly-analysis-panel" aria-label="AI anomaly analysis"><div className="panel-heading"><div><span className="card-label">AI Analysis</span><h3>{selectedAnomaly.service} · {selectedAnomaly.date}</h3></div><button className="ghost-button" onClick={() => setSelectedAnomaly(null)}>Close</button></div>{explanationLoading ? <div className="ai-status">Generating an evidence-based explanation…</div> : explanationError ? <div className="error-banner" role="alert">{explanationError}</div> : explanation ? <div className="analysis-content"><p className="analysis-status">{explanation.status === "ready" ? `Confidence: ${explanation.confidence || "unknown"}` : explanation.fallback_message}</p>{explanation.summary ? <><h4>Summary</h4><p>{explanation.summary}</p></> : null}{explanation.likely_causes.length ? <><h4>Likely causes</h4><div className="service-list">{explanation.likely_causes.map((cause, index) => <div className="service-row" key={`${cause.cause}-${index}`}><div><strong>{cause.cause}</strong><small>{cause.evidence}</small></div><span className={`severity ${cause.confidence}`}>{cause.confidence}</span></div>)}</div></> : null}{explanation.context.evidence.length ? <><h4>Verified evidence</h4><div className="service-list">{explanation.context.evidence.map((item) => <div className="service-row" key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div></> : null}{explanation.investigation_steps.length ? <><h4>Investigation steps</h4><ol>{explanation.investigation_steps.map((step, index) => <li key={`${step}-${index}`}>{step}</li>)}</ol></> : null}{explanation.limitations.length ? <><h4>Limitations</h4><ul>{explanation.limitations.map((item) => <li key={item}>{item}</li>)}</ul></> : null}<button className="ghost-button anomaly-action" onClick={() => onInvestigate(selectedAnomaly)}>Explore verified data in Cost Explorer</button></div> : null}</section> : null}
       {loading ? <div className="dashboard-grid" aria-label="Loading anomalies"><div className="skeleton" /><div className="skeleton wide" /></div> : !data ? null : <>
         <section className="dashboard-grid anomaly-summary">
           <article className="metric-card"><span className="card-label">Total anomalies</span><strong className="metric-value compact">{data.summary.total}</strong><span className="metric-note">Last {data.baseline_lookback_days} days used as baseline</span></article>
@@ -85,7 +111,7 @@ export default function Anomalies({ onInvestigate }: { onInvestigate: (anomaly: 
           <article className="panel"><div className="panel-heading"><div><span className="card-label">Anomaly trend</span><h3>Signals by day</h3></div></div><div className="service-list">{data.trend.length ? data.trend.map((point) => <div className="service-row" key={point.date}><span>{point.date}</span><strong>{point.count}</strong></div>) : <EmptyState message="No anomaly trend for this period." />}</div></article>
         </section>
         <section className="panel anomaly-list-panel"><div className="panel-heading"><div><span className="card-label">Largest anomalies</span><h3>Investigate abnormal spend</h3></div><span className="currency-badge">Median + MAD</span></div>
-          {data.anomalies.length ? <div className="anomaly-list">{data.anomalies.map((anomaly) => <article className={`insight-card ${anomaly.severity}`} key={anomaly.id}><div className="insight-icon">!</div><div className="insight-content"><div className="insight-meta"><span className={`severity ${anomaly.severity}`}>{anomaly.severity}</span><span>{anomaly.date} · score {anomaly.anomaly_score}</span></div><h4>{titleCaseProvider(anomaly.provider)} · {anomaly.service}</h4><p>{formatMoney(anomaly.actual_cost, anomaly.currency)} actual vs {formatMoney(anomaly.expected_cost, anomaly.currency)} expected · {formatMoney(anomaly.deviation_amount, anomaly.currency)} deviation · {formatPercent(anomaly.deviation_percentage)}</p><small>{anomaly.account_name || anomaly.account_id || "Account unavailable"} · {anomaly.region || "Region unavailable"}</small><button className="ghost-button anomaly-action" onClick={() => onInvestigate(anomaly)}>Open in Cost Explorer</button></div></article>)}</div> : <EmptyState message="No significant cost anomalies for this period." />}
+          {data.anomalies.length ? <div className="anomaly-list">{data.anomalies.map((anomaly) => <article className={`insight-card ${anomaly.severity}`} key={anomaly.id}><div className="insight-icon">!</div><div className="insight-content"><div className="insight-meta"><span className={`severity ${anomaly.severity}`}>{anomaly.severity}</span><span>{anomaly.date} · score {anomaly.anomaly_score}</span></div><h4>{titleCaseProvider(anomaly.provider)} · {anomaly.service}</h4><p>{formatMoney(anomaly.actual_cost, anomaly.currency)} actual vs {formatMoney(anomaly.expected_cost, anomaly.currency)} expected · {formatMoney(anomaly.deviation_amount, anomaly.currency)} deviation · {formatPercent(anomaly.deviation_percentage)}</p><small>{anomaly.account_name || anomaly.account_id || "Account unavailable"} · {anomaly.region || "Region unavailable"}</small><button className="ghost-button anomaly-action" onClick={() => void requestExplanation(anomaly)}>Explain with AI</button><button className="ghost-button anomaly-action" onClick={() => onInvestigate(anomaly)}>Open in Cost Explorer</button></div></article>)}</div> : <EmptyState message="No significant cost anomalies for this period." />}
           {data.total > PAGE_SIZE ? <div className="pagination"><button className="ghost-button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>Previous</button><span>Page {page} of {pageCount}</span><button className="ghost-button" disabled={offset + PAGE_SIZE >= data.total} onClick={() => setOffset(offset + PAGE_SIZE)}>Next</button></div> : null}
         </section>
       </>}
