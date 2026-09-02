@@ -14,9 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.auth.dependencies import get_current_active_user
 from app.auth.models import User
+from app.core.config import settings as app_settings
 from app.core.logging import get_logger
 from app.core.rate_limit import enforce_cost_rate_limit
 from app.providers import get_provider
+from app.providers.aws import AWSCloudProvider
 from app.providers.exceptions import (
     ProviderCredentialsError,
     ProviderInvalidDateRangeError,
@@ -40,6 +42,18 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/aws", tags=["aws"])
 aws_provider_dependency = get_provider("aws")
 aws_cost_aggregator_dependency = get_cost_aggregator("aws", aws_provider_dependency)
+
+
+@router.get("/health", summary="Check AWS Cost Explorer connectivity")
+async def get_aws_health() -> dict[str, bool | str]:
+    """Return a safe connectivity result without exposing AWS details."""
+    provider = AWSCloudProvider()
+    healthy = provider.health_check()
+    return {
+        "provider": "aws",
+        "healthy": healthy,
+        "mode": "mock" if app_settings.aws_use_mock_data else "real",
+    }
 
 
 @router.get(

@@ -6,6 +6,7 @@ from app.core.config import Settings
 def test_aws_settings_defaults():
     """AWS settings have correct defaults and validation."""
     settings = Settings(
+        _env_file=None,
         JWT_SECRET_KEY="test-secret",
         AWS_DEFAULT_REGION="us-east-1",
         AWS_COST_EXPLORER_ENABLED=True,

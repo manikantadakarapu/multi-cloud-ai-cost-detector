@@ -93,3 +93,6 @@ h3 { margin: 5px 0 0; font-size: 18px; letter-spacing: -.03em; }
 .badge.aws { background: #ffeacc; color: #a35200; }
 .badge.azure { background: #dce7fe; color: #1e4bb5; }
 .badge.gcp { background: #e2f0d9; color: #2e6930; }
+.severity.critical { color: #8f1d2c; }.severity.high { color: var(--danger); }.severity.medium { color: #b37724; }.severity.low { color: var(--teal-dark); }.severity.normal { color: var(--ink-soft); }
+.anomaly-summary { margin-bottom: 18px; }.anomaly-summary .panel { grid-column: span 6; }.anomaly-list-panel { margin-top: 18px; }.anomaly-list { display: grid; gap: 10px; }.anomaly-action { margin-top: 10px; color: var(--teal-dark); font-weight: 700; }
+@media (max-width: 1050px) { .anomaly-summary .panel { grid-column: span 12; } }

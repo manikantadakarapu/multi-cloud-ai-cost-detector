@@ -118,6 +118,7 @@ MCAICD/
 - ✅ Frontend-ready dashboard summary and deterministic insights contracts
 - ✅ Rule-based cost increase, decrease, and top-driver insights
 - ✅ Gemini explanations of selected deterministic cost events, with Redis caching and dashboard fallback when AI is unavailable
+- ✅ Deterministic median/MAD Cost Anomalies with authenticated API and Explorer drill-down
 - ✅ Next.js frontend MVP with JWT login, live analytics, date presets, and responsive states
 
 ---
@@ -424,12 +425,20 @@ The AWS identity used by the application must allow Cost Explorer reads:
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `AWS_DEFAULT_REGION` | AWS region for the Cost Explorer API. | `us-east-1` | No |
+| `AWS_SESSION_TOKEN` | Optional session token for temporary credentials. | â€” | No* |
 | `AWS_PROFILE` | Named profile from `~/.aws/credentials`. | _(default)_ | No |
 | `AWS_ACCESS_KEY_ID` | AWS access key ID. | — | No* |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret access key. | — | No* |
 | `AWS_COST_EXPLORER_ENABLED` | Enable or disable the Cost Explorer integration. | `true` | No |
+| `AWS_USE_MOCK_DATA` | Use deterministic local demo data instead of AWS Cost Explorer. | `false` | No |
 
 *Required only when not using a profile or an IAM role.
+
+`AWS_SESSION_TOKEN` may be supplied for temporary credentials. Real Cost
+Explorer data is the default. Set `AWS_USE_MOCK_DATA=true` only for local
+demos or tests; the mock path never creates an AWS SDK client. The
+unauthenticated `GET /api/v1/aws/health` endpoint reports only provider,
+connectivity, and mode, and never returns credentials or raw AWS errors.
 
 ### API Endpoint
 

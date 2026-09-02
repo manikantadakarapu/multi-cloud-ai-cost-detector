@@ -937,3 +937,24 @@ graph TD
 The deployment target is deliberately provider-agnostic at the platform
 level: the same Helm chart deploys to EKS, AKS, or GKE. The cloud being
 monitored does not have to be the cloud hosting the platform.
+
+## Deterministic Cost Anomalies (Sprint 1.7)
+
+`GET /api/v1/anomalies` uses the normalized daily records loaded by the Cost
+Explorer service. It groups records by provider, account/project/subscription,
+service, and region, removes duplicate line items, and compares the requested
+period with a configurable historical lookback (30 days by default).
+
+The initial detector uses the historical median as expected cost and MAD
+(median absolute deviation), scaled by 1.4826, as the robust spread. At least
+7 historical observations and a $1.00 absolute change plus 20% deviation are
+required by default. Scores classify as LOW (2), MEDIUM (3), HIGH (4), or
+CRITICAL (6); thresholds are configurable through `ANOMALY_*` settings.
+
+Zero baselines use an explicit `zero_baseline` method and do not manufacture a
+percentage. New dimensions and insufficient or sparse history produce no
+anomaly. Currency is kept with each normalized dimension and provider records
+are never exposed as raw SDK objects. Results are JWT-protected, rate-limited,
+and cached in Redis with a user-scoped key containing every query and detector
+configuration value. Detection is deterministic and AI-independent; future AI
+work may explain an already detected anomaly but must not score or detect it.
