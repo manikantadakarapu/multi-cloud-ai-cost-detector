@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, getDashboardInsights, getDashboardSummary } from "../lib/api/client";
 import { aiExplanationNotice } from "../lib/ai-insights";
 import { formatDateLabel, formatMoney, formatPercent, getDateRange, titleCaseProvider } from "../lib/dates";
-import type { AIInsight, CostInsight, DashboardInsights, DashboardSummary, DatePreset } from "../lib/types";
+import type { AIInsight, CostAnomaly, CostInsight, DashboardInsights, DashboardSummary, DatePreset } from "../lib/types";
+import Anomalies from "./anomalies";
 import CostExplorer from "./explorer";
 import Shell from "./shell";
 
@@ -105,7 +106,8 @@ function Insights({
   );
 }
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies">("dashboard");
+  const [explorerFocus, setExplorerFocus] = useState<CostAnomaly | null>(null);
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [insights, setInsights] = useState<DashboardInsights | null>(null);
@@ -171,7 +173,9 @@ export default function Dashboard() {
       </div>
 
       {activeTab === "explorer" ? (
-        <CostExplorer />
+        <CostExplorer initialFilters={explorerFocus ? { provider: explorerFocus.provider, service: explorerFocus.service, region: explorerFocus.region || undefined, account_id: explorerFocus.account_id || undefined } : undefined} />
+      ) : activeTab === "anomalies" ? (
+        <Anomalies onInvestigate={(anomaly) => { setExplorerFocus(anomaly); setActiveTab("explorer"); }} />
       ) : (
         <>
           <section className="dashboard-header" id="dashboard">

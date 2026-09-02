@@ -334,3 +334,9 @@ class CostExplorerService:
             )
 
         return response
+
+    async def get_cost_records(
+        self, start_date: date, end_date: date, provider: str | None = None
+    ) -> list[CostRecord]:
+        """Load normalized daily line items for other analytical services."""
+        return await self._load_all_records(start_date, end_date, provider, "DAILY")

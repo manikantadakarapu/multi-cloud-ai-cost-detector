@@ -150,6 +150,22 @@ class RedisCache:
             logger.exception("redis_cache_set_failed")
             self._available = False
 
+    async def get(self, key: str) -> str | None:
+        """Compatibility adapter returning the cached JSON string."""
+        payload = await self.get_json(key)
+        return (
+            json.dumps(payload, separators=(",", ":"), sort_keys=True)
+            if payload is not None
+            else None
+        )
+
+    async def set(self, key: str, value: str, ttl: int | None = None) -> None:
+        """Compatibility adapter for callers using the original cache contract."""
+        try:
+            await self.set_json(key, json.loads(value), ttl)
+        except (TypeError, ValueError):
+            logger.warning("redis_cache_payload_invalid")
+
 
 def _json_payload(value: Any) -> str:
     if hasattr(value, "model_dump"):

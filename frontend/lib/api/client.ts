@@ -1,4 +1,4 @@
-import type { AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
+import type { AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -165,4 +165,22 @@ export function getExplorerData(params: {
   if (params.offset !== undefined) query.set("offset", String(params.offset));
 
   return request<ExplorerResponse>(`/explorer?${query.toString()}`);
+}
+
+export function getAnomalies(params: {
+  start_date: string;
+  end_date: string;
+  provider?: string;
+  account_id?: string;
+  service?: string;
+  region?: string;
+  severity?: string;
+  sort_by?: string;
+}) {
+  const query = new URLSearchParams({ start_date: params.start_date, end_date: params.end_date });
+  for (const key of ["provider", "account_id", "service", "region", "severity", "sort_by"] as const) {
+    const value = params[key];
+    if (value) query.set(key, value);
+  }
+  return request<AnomalyResponse>(`/anomalies?${query.toString()}`);
 }
