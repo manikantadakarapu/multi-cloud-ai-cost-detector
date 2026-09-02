@@ -132,6 +132,9 @@ export type CostAnomaly = {
 };
 export type AnomalyResponse = {
   anomalies: CostAnomaly[];
+  total: number;
+  limit: number;
+  offset: number;
   summary: { total: number; high_or_critical: number; by_severity: Record<AnomalySeverity, number> };
   trend: { date: string; count: number }[];
   start_date: string;
