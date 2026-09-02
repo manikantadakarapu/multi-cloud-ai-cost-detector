@@ -10,6 +10,7 @@ from statistics import median
 
 from app.core.cache import RedisCache
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.schemas.anomaly import (
     Anomaly,
     AnomalyQuery,
@@ -26,6 +27,7 @@ DETECTOR_VERSION = "1.0"
 CENT = Decimal("0.01")
 SCALE = Decimal("1.4826")
 MIN_SCALE = Decimal("0.01")
+logger = get_logger(__name__)
 
 
 def _money(value: Decimal) -> Decimal:
@@ -119,7 +121,7 @@ class AnomalyDetectionService:
                 try:
                     return AnomalyResponse.model_validate(cached)
                 except Exception:
-                    pass
+                    logger.warning("anomaly_cache_invalid")
 
         history_start = query.start_date - timedelta(
             days=settings.anomaly_lookback_days
