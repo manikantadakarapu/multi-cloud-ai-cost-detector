@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.8 AI Anomaly Explanation & Root Cause Analysis:
+  - Deterministic investigation contexts with verified and derived cost evidence.
+  - On-demand authenticated anomaly explanation endpoint using the existing Gemini client.
+  - Strict response validation, numerical-claim guardrails, versioned prompts, and safe fallbacks.
+  - Redis caching for validated explanations with anomaly/context/prompt/model versioning.
+  - Anomaly dashboard AI analysis view linked to verified Cost Explorer investigation.
+
 - Sprint 1.7 Cost Anomaly Detection:
   - Provider-independent deterministic anomaly detection using historical median/MAD baselines.
   - Authenticated `/api/v1/anomalies` endpoint with dimension filters, severity filtering, sorting, and pagination.

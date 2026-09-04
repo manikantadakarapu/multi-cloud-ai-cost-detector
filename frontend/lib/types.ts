@@ -142,6 +142,30 @@ export type AnomalyResponse = {
   baseline_lookback_days: number;
   detector_version: string;
 };
+export type ExplanationStatus = "ready" | "disabled" | "unavailable" | "timeout" | "invalid" | "not_found";
+export type AnomalyExplanation = {
+  anomaly: CostAnomaly;
+  context: {
+    context_version: string;
+    evidence: { label: string; value: string; status: "verified" | "derived" | "unknown" }[];
+    daily_costs: { date: string; cost: string }[];
+    service_changes: { value: string; current_cost: string; baseline_cost: string; change_amount: string; change_percentage: string | null; share_of_increment: string | null }[];
+    region_changes: { value: string; current_cost: string; baseline_cost: string; change_amount: string; change_percentage: string | null; share_of_increment: string | null }[];
+    provider_changes: { value: string; current_cost: string; baseline_cost: string; change_amount: string; change_percentage: string | null; share_of_increment: string | null }[];
+    unknowns: string[];
+  };
+  status: ExplanationStatus;
+  summary: string | null;
+  likely_causes: { cause: string; evidence: string; confidence: "low" | "medium" | "high" }[];
+  impact: string | null;
+  investigation_steps: string[];
+  confidence: "low" | "medium" | "high" | null;
+  limitations: string[];
+  generated_at: string | null;
+  model: string | null;
+  prompt_version: string;
+  fallback_message: string | null;
+};
 export type CostRecord = {
   date: string;
   provider: string;

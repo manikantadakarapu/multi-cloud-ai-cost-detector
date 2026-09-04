@@ -21,6 +21,10 @@ Sprint 1.7 adds deterministic, AI-independent Cost Anomaly Detection with
 median/MAD baselines, configurable severity thresholds, authenticated filtering
 and pagination, Redis caching, and Cost Explorer drill-down.
 
+Sprint 1.8 adds on-demand AI explanations and root-cause analysis for verified
+anomalies, with evidence-scoped prompts, strict response validation, safe
+fallbacks, and cached results.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost

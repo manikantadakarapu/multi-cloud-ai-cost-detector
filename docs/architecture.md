@@ -960,3 +960,21 @@ parameter, and detector configuration value. The response includes the total
 filtered count plus a bounded page of anomalies. Detection is deterministic and
 AI-independent; future AI work may explain an already detected anomaly but must
 not score or detect it.
+
+## AI Anomaly Explanations (Sprint 1.8)
+
+`POST /api/v1/anomalies/{anomaly_id}/explanation` first re-resolves the anomaly
+through the deterministic Sprint 1.7 detector, then loads normalized Cost Explorer
+records and builds a versioned investigation context. The context contains only
+verified anomaly facts and derived daily/service/region/provider evidence; raw
+cloud SDK responses and secrets are never sent to Gemini.
+
+Gemini receives the versioned evidence through the existing AI client and must
+return a strict explanation schema containing a summary, ranked causes, impact,
+investigation steps, confidence, and limitations. Numerical claims are checked
+against context values before a response is cached or returned. Invalid,
+unavailable, timed-out, or disabled AI responses return the anomaly and verified
+context with a safe fallback message, so anomaly detection remains available.
+Explanation cache keys include user scope, anomaly ID, context version, prompt
+version, and model. Anomaly detection and scoring remain deterministic and
+AI-independent; AI is used only for explanation and investigation assistance.
