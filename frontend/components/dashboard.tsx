@@ -7,6 +7,7 @@ import { formatDateLabel, formatMoney, formatPercent, getDateRange, titleCasePro
 import type { AIInsight, CostAnomaly, CostInsight, DashboardInsights, DashboardSummary, DatePreset } from "../lib/types";
 import Anomalies from "./anomalies";
 import CostExplorer from "./explorer";
+import Forecast from "./forecast";
 import Shell from "./shell";
 
 function EmptyState({ message }: { message: string }) { return <div className="empty-state">{message}</div>; }
@@ -276,6 +277,7 @@ export default function Dashboard() {
                 </div>
                 <Insights payload={insights} currency={summary.overview.currency} loading={insightsLoading} error={insightsError} />
               </article>
+              <Forecast range={range} onExplore={(filters) => { setExplorerFocus({ provider: filters.provider || "", service: filters.service || "", region: filters.region || null, account_id: filters.account_id || null } as CostAnomaly); setActiveTab("explorer"); }} />
             </section>
           )}
         </>

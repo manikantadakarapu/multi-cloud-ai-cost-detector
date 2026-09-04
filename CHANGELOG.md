@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 1.9 deterministic Cost Forecasting:
+  - Provider-independent weighted recent baseline with bounded trend and robust anomaly exclusion.
+  - Authenticated 7/14/30-day forecast API with total, provider, service, account, and region dimensions.
+  - Confidence ranges, data-quality metadata, explicit insufficient-data responses, Redis caching, and accuracy metrics.
+  - Dashboard forecast section with horizon selection and Cost Explorer drill-down.
+
 - Sprint 1.8 AI Anomaly Explanation & Root Cause Analysis:
   - Deterministic investigation contexts with verified and derived cost evidence.
   - On-demand authenticated anomaly explanation endpoint using the existing Gemini client.

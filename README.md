@@ -25,6 +25,10 @@ Sprint 1.8 adds on-demand AI explanations and root-cause analysis for verified
 anomalies, with evidence-scoped prompts, strict response validation, safe
 fallbacks, and cached results.
 
+Sprint 1.9 adds deterministic Cost Forecasting for 7, 14, and 30-day horizons,
+with confidence ranges, provider/service breakdowns, data-quality reporting, and
+Cost Explorer navigation.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
