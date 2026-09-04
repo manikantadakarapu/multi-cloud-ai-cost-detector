@@ -228,7 +228,9 @@ async def test_ai_failure_returns_safe_fallback_without_losing_anomaly():
 
 
 @pytest.mark.asyncio
-async def test_explanation_endpoint_requires_authentication(client: AsyncClient) -> None:
+async def test_explanation_endpoint_requires_authentication(
+    client: AsyncClient,
+) -> None:
     response = await client.post(
         "/api/v1/anomalies/anomaly-1/explanation",
         json={"start_date": "2026-07-08", "end_date": "2026-07-08"},
