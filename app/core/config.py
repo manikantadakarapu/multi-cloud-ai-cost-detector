@@ -280,11 +280,21 @@ class Settings(BaseSettings):
     alert_email_enabled: bool = Field(
         default=False, validation_alias="ALERT_EMAIL_ENABLED"
     )
-    alert_smtp_host: str | None = Field(default=None, validation_alias="ALERT_SMTP_HOST")
-    alert_smtp_port: int = Field(default=587, ge=1, le=65535, validation_alias="ALERT_SMTP_PORT")
-    alert_smtp_username: str | None = Field(default=None, validation_alias="ALERT_SMTP_USERNAME")
-    alert_smtp_password: str | None = Field(default=None, validation_alias="ALERT_SMTP_PASSWORD")
-    alert_email_from: str | None = Field(default=None, validation_alias="ALERT_EMAIL_FROM")
+    alert_smtp_host: str | None = Field(
+        default=None, validation_alias="ALERT_SMTP_HOST"
+    )
+    alert_smtp_port: int = Field(
+        default=587, ge=1, le=65535, validation_alias="ALERT_SMTP_PORT"
+    )
+    alert_smtp_username: str | None = Field(
+        default=None, validation_alias="ALERT_SMTP_USERNAME"
+    )
+    alert_smtp_password: str | None = Field(
+        default=None, validation_alias="ALERT_SMTP_PASSWORD"
+    )
+    alert_email_from: str | None = Field(
+        default=None, validation_alias="ALERT_EMAIL_FROM"
+    )
 
     @computed_field
     @property
