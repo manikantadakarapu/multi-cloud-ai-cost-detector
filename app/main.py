@@ -6,12 +6,14 @@ wiring — logging, lifespan hooks, routers, and OpenAPI metadata — happens
 here to keep route modules focused on HTTP concerns.
 """
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.alerts.scheduler import run_alert_scheduler
 from app.api.router import api_router
 from app.api.routes.root import router as root_router
 from app.core.cache import shutdown_cache, startup_cache
@@ -42,10 +44,18 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             "registered_providers": registered_providers,
         },
     )
+    scheduler_stop = asyncio.Event()
+    scheduler_task: asyncio.Task[None] | None = None
     try:
         await startup_cache()
+        if settings.alerts_scheduler_enabled:
+            scheduler_task = asyncio.create_task(run_alert_scheduler(scheduler_stop))
         yield
     finally:
+        if scheduler_task is not None:
+            scheduler_stop.set()
+            scheduler_task.cancel()
+            await asyncio.gather(scheduler_task, return_exceptions=True)
         await shutdown_cache()
         await dispose_engine()
         logger.info("application_stopped")

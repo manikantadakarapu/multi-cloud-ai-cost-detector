@@ -25,6 +25,7 @@ import importlib.util  # noqa: E402
 import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+from app.alerts.models import Alert  # noqa: E402,F401
 from app.core.config import settings  # noqa: E402
 from app.database.base import Base  # noqa: E402
 

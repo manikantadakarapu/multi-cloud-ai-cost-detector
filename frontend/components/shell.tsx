@@ -9,8 +9,8 @@ export default function Shell({
   onTabChange,
 }: Readonly<{
   children: React.ReactNode;
-  activeTab?: "dashboard" | "explorer" | "anomalies" | "optimization";
-  onTabChange?: (tab: "dashboard" | "explorer" | "anomalies" | "optimization") => void;
+  activeTab?: "dashboard" | "explorer" | "anomalies" | "optimization" | "alerts";
+  onTabChange?: (tab: "dashboard" | "explorer" | "anomalies" | "optimization" | "alerts") => void;
 }>) {
   const router = useRouter();
   const user = getStoredUser();
@@ -47,6 +47,9 @@ export default function Shell({
           <button type="button" className={`nav-link ${activeTab === "optimization" ? "active" : ""}`} style={{ width: "100%", border: 0, textAlign: "left", cursor: "pointer", marginTop: "4px" }} onClick={() => onTabChange?.("optimization")}>
             <span aria-hidden="true">$</span> Cost Optimization
           </button>
+          <button type="button" className={`nav-link ${activeTab === "alerts" ? "active" : ""}`} style={{ width: "100%", border: 0, textAlign: "left", cursor: "pointer", marginTop: "4px" }} onClick={() => onTabChange?.("alerts")}>
+            <span aria-hidden="true">◉</span> Cost Alerts
+          </button>
           <button
             type="button"
             className={`nav-link ${activeTab === "explorer" ? "active" : ""}`}
@@ -64,7 +67,7 @@ export default function Shell({
         <header className="topbar">
           <div>
             <p className="eyebrow">Workspace overview</p>
-            <h2>{activeTab === "explorer" ? "Cost Explorer" : activeTab === "anomalies" ? "Cost Anomalies" : activeTab === "optimization" ? "Cost Optimization" : "Dashboard"}</h2>
+            <h2>{activeTab === "explorer" ? "Cost Explorer" : activeTab === "anomalies" ? "Cost Anomalies" : activeTab === "optimization" ? "Cost Optimization" : activeTab === "alerts" ? "Cost Alerts" : "Dashboard"}</h2>
           </div>
           <div className="user-menu">
             <div className="avatar">{user?.full_name?.slice(0, 1).toUpperCase() || "U"}</div>
