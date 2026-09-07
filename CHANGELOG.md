@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 2.4 FinOps Copilot MVP:
+  - Bounded deterministic question classification for cost, anomaly, forecast, optimization, budget, and cross-domain questions.
+  - Authorized context retrieval from existing deterministic services before any Gemini call.
+  - Structured Copilot response validation with numerical, reference, and remediation-claim guardrails.
+  - User-scoped Redis answer caching and safe deterministic fallback when AI is unavailable or disabled.
+  - Authenticated `/api/v1/copilot/query` endpoint and simple dashboard Copilot panel with example questions.
+  - No RAG, embeddings, agents, persistent memory, cloud mutations, or AI-generated FinOps values.
+
 - Sprint 2.3 Cost Budgets & Guardrails:
   - User-scoped monthly budgets with provider, account, service, and region filters.
   - Deterministic actual utilization, remaining spend, warning/critical/exceeded states, and separate forecast-aware status.

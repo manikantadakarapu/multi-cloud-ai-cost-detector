@@ -408,3 +408,23 @@ export type BudgetEvaluation = {
   forecast_available: boolean;
   evaluated_at: string;
 };
+
+export type CopilotIntent = "cost" | "anomaly" | "forecast" | "optimization" | "budget" | "cross_domain" | "unsupported";
+export type CopilotStatus = "ready" | "disabled" | "unavailable" | "invalid" | "unsupported" | "insufficient_data";
+export type CopilotResponse = {
+  answer: string;
+  key_findings: string[];
+  evidence: string[];
+  recommended_next_steps: string[];
+  limitations: string[];
+  confidence: "low" | "medium" | "high";
+  anomaly_ids: string[];
+  recommendation_ids: string[];
+  budget_ids: string[];
+  status: CopilotStatus;
+  intent: CopilotIntent;
+  generated_at: string | null;
+  model: string | null;
+  prompt_version: string;
+  fallback_message: string | null;
+};

@@ -8,6 +8,7 @@ import type { AIInsight, CostAnomaly, CostInsight, DashboardInsights, DashboardS
 import Anomalies from "./anomalies";
 import Alerts from "./alerts";
 import Budgets from "./budgets";
+import Copilot from "./copilot";
 import CostExplorer from "./explorer";
 import Forecast from "./forecast";
 import Optimization from "./optimization";
@@ -110,7 +111,7 @@ function Insights({
   );
 }
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies" | "optimization" | "alerts" | "budgets">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies" | "optimization" | "alerts" | "budgets" | "copilot">("dashboard");
   const [explorerFocus, setExplorerFocus] = useState<CostAnomaly | null>(null);
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -177,6 +178,7 @@ export default function Dashboard() {
         <button type="button" className={`view-tab ${activeTab === "optimization" ? "active" : ""}`} onClick={() => setActiveTab("optimization")}>Cost Optimization</button>
         <button type="button" className={`view-tab ${activeTab === "alerts" ? "active" : ""}`} onClick={() => setActiveTab("alerts")}>Cost Alerts</button>
         <button type="button" className={`view-tab ${activeTab === "budgets" ? "active" : ""}`} onClick={() => setActiveTab("budgets")}>Budgets</button>
+        <button type="button" className={`view-tab ${activeTab === "copilot" ? "active" : ""}`} onClick={() => setActiveTab("copilot")}>FinOps Copilot</button>
       </div>
 
       {activeTab === "explorer" ? (
@@ -189,6 +191,8 @@ export default function Dashboard() {
         <Alerts />
       ) : activeTab === "budgets" ? (
         <Budgets />
+      ) : activeTab === "copilot" ? (
+        <Copilot />
       ) : (
         <>
           <section className="dashboard-header" id="dashboard">

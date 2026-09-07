@@ -15,6 +15,7 @@ from app.api.routes.anomalies import router as anomalies_router
 from app.api.routes.aws import router as aws_router
 from app.api.routes.azure import router as azure_router
 from app.api.routes.budgets import router as budgets_router
+from app.api.routes.copilot import router as copilot_router
 from app.api.routes.costs import router as costs_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.explorer import router as explorer_router
@@ -30,6 +31,7 @@ api_router.include_router(aws_router)
 api_router.include_router(azure_router)
 api_router.include_router(gcp_router)
 api_router.include_router(costs_router, tags=["costs"])
+api_router.include_router(copilot_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(explorer_router)
 api_router.include_router(forecast_router)
