@@ -19,6 +19,7 @@ from app.api.routes.explorer import router as explorer_router
 from app.api.routes.forecast import router as forecast_router
 from app.api.routes.gcp import router as gcp_router
 from app.api.routes.health import router as health_router
+from app.api.routes.optimization import router as optimization_router
 from app.auth.router import router as auth_router
 
 api_router = APIRouter(prefix="/api/v1")
@@ -30,6 +31,7 @@ api_router.include_router(costs_router, tags=["costs"])
 api_router.include_router(dashboard_router)
 api_router.include_router(explorer_router)
 api_router.include_router(forecast_router)
+api_router.include_router(optimization_router)
 api_router.include_router(analytics_router)
 api_router.include_router(anomalies_router)
 api_router.include_router(auth_router)

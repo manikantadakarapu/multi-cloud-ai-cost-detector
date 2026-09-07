@@ -29,6 +29,12 @@ Sprint 1.9 adds deterministic Cost Forecasting for 7, 14, and 30-day horizons,
 with confidence ranges, provider/service breakdowns, data-quality reporting, and
 Cost Explorer navigation.
 
+Sprint 2.0 adds deterministic Cost Optimization recommendations for sustained
+growth, persistent high-cost services, and supported storage/network signals.
+Recommendations include verified evidence, scenario savings estimates, priority,
+confidence, lifecycle status, filters, Redis caching, and Cost Explorer drill-down.
+The feature is advisory only and never changes cloud resources automatically.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost

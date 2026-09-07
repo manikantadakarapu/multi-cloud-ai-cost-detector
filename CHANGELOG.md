@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 2.0 deterministic Cost Optimization & FinOps Recommendations:
+  - Provider-independent evidence rules for sustained growth, persistent high-cost services, storage, and network cost signals.
+  - Typed recommendation evidence, scenario savings ranges, priority/confidence, lifecycle status, deduplication, and versioned Redis caching.
+  - Authenticated list/detail/status APIs with filters, sorting, pagination, and insufficient-data handling.
+  - Cost Optimization dashboard with recommendation review, status updates, evidence display, and Cost Explorer drill-down.
+  - Explicitly advisory implementation with no automatic cloud resource modifications and no AI in detection or scoring.
+
 - Sprint 1.9 deterministic Cost Forecasting:
   - Provider-independent weighted recent baseline with bounded trend and robust anomaly exclusion.
   - Authenticated 7/14/30-day forecast API with total, provider, service, account, and region dimensions.

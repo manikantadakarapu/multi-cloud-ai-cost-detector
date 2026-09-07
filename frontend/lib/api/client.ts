@@ -1,4 +1,4 @@
-import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, TokenResponse } from "../types";
+import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -212,4 +212,41 @@ export function getForecast(params: { start_date: string; end_date: string; hori
     if (value) query.set(key, value);
   }
   return request<ForecastResponse>(`/forecast?${query.toString()}`);
+}
+
+export function getOptimizationRecommendations(params: {
+  start_date: string;
+  end_date: string;
+  provider?: string;
+  account_id?: string;
+  service?: string;
+  region?: string;
+  category?: string;
+  priority?: string;
+  status?: string;
+  sort_by?: string;
+  sort_order?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const query = new URLSearchParams({ start_date: params.start_date, end_date: params.end_date });
+  for (const key of ["provider", "account_id", "service", "region", "category", "priority", "status", "sort_by", "sort_order"] as const) {
+    const value = params[key];
+    if (value) query.set(key, value);
+  }
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+  if (params.offset !== undefined) query.set("offset", String(params.offset));
+  return request<OptimizationResponse>(`/optimization/recommendations?${query.toString()}`);
+}
+
+export function getOptimizationRecommendation(id: string, params: { start_date: string; end_date: string }) {
+  const query = new URLSearchParams(params);
+  return request<OptimizationRecommendation>(`/optimization/recommendations/${encodeURIComponent(id)}?${query.toString()}`);
+}
+
+export function updateOptimizationStatus(id: string, status: OptimizationStatus, params: { start_date: string; end_date: string }) {
+  return request<OptimizationRecommendation>(`/optimization/recommendations/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, ...params }),
+  });
 }

@@ -262,3 +262,52 @@ export type ForecastResponse = {
   methodology_version: string;
   message: string | null;
 };
+
+export type OptimizationCategory = "cost_growth" | "high_cost_service" | "storage" | "network";
+export type OptimizationPriority = "low" | "medium" | "high" | "critical";
+export type OptimizationConfidence = "low" | "medium" | "high";
+export type OptimizationStatus = "new" | "reviewed" | "dismissed" | "implemented";
+export type OptimizationEvidence = { label: string; value: string; source: string };
+export type OptimizationRecommendation = {
+  recommendation_id: string;
+  provider: string;
+  account_id: string | null;
+  service: string;
+  region: string | null;
+  resource_identifier: string | null;
+  category: OptimizationCategory;
+  title: string;
+  description: string;
+  rationale: string;
+  evidence: OptimizationEvidence[];
+  priority: OptimizationPriority;
+  current_cost: string;
+  estimated_monthly_savings: string | null;
+  estimated_annual_savings: string | null;
+  savings_currency: string;
+  savings_period: string;
+  savings_explanation: string | null;
+  confidence: OptimizationConfidence;
+  status: OptimizationStatus;
+  detection_method: string;
+  rule_version: string;
+  created_at: string;
+};
+export type OptimizationResponse = {
+  recommendations: OptimizationRecommendation[];
+  total: number;
+  limit: number;
+  offset: number;
+  summary: {
+    total_recommendations: number;
+    high_or_critical: number;
+    estimated_monthly_savings: string | null;
+    estimated_annual_savings: string | null;
+    by_category: Record<string, number>;
+    by_provider: Record<string, number>;
+  };
+  query: Record<string, unknown>;
+  rule_version: string;
+  insufficient_data: boolean;
+  message: string | null;
+};

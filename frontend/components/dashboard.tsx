@@ -8,6 +8,7 @@ import type { AIInsight, CostAnomaly, CostInsight, DashboardInsights, DashboardS
 import Anomalies from "./anomalies";
 import CostExplorer from "./explorer";
 import Forecast from "./forecast";
+import Optimization from "./optimization";
 import Shell from "./shell";
 
 function EmptyState({ message }: { message: string }) { return <div className="empty-state">{message}</div>; }
@@ -107,7 +108,7 @@ function Insights({
   );
 }
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies" | "optimization">("dashboard");
   const [explorerFocus, setExplorerFocus] = useState<CostAnomaly | null>(null);
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -171,12 +172,15 @@ export default function Dashboard() {
         >
           Cost Explorer & Drill-Down
         </button>
+        <button type="button" className={`view-tab ${activeTab === "optimization" ? "active" : ""}`} onClick={() => setActiveTab("optimization")}>Cost Optimization</button>
       </div>
 
       {activeTab === "explorer" ? (
         <CostExplorer initialFilters={explorerFocus ? { provider: explorerFocus.provider, service: explorerFocus.service, region: explorerFocus.region || undefined, account_id: explorerFocus.account_id || undefined } : undefined} />
       ) : activeTab === "anomalies" ? (
         <Anomalies onInvestigate={(anomaly) => { setExplorerFocus(anomaly); setActiveTab("explorer"); }} />
+      ) : activeTab === "optimization" ? (
+        <Optimization onInvestigate={(filters) => { setExplorerFocus({ provider: filters.provider || "", service: filters.service || "", region: filters.region || null, account_id: filters.account_id || null } as CostAnomaly); setActiveTab("explorer"); }} />
       ) : (
         <>
           <section className="dashboard-header" id="dashboard">
