@@ -979,6 +979,27 @@ Explanation cache keys include user scope, anomaly ID, context version, prompt
 version, and model. Anomaly detection and scoring remain deterministic and
 AI-independent; AI is used only for explanation and investigation assistance.
 
+## Cost Optimization Recommendations (Sprint 2.0)
+
+`GET /api/v1/optimization/recommendations` builds advisory recommendations from
+the normalized `CostRecord` source shared with Cost Explorer, anomalies, and
+forecasting. Rules compare earlier and recent daily averages for sustained
+growth, identify persistent high-cost services by filtered-spend share, and
+classify supported service names into storage or network categories. Idle and
+underutilization signals are omitted until verified utilization telemetry exists.
+
+Recommendations carry deterministic identity, scope, evidence values and
+sources, current cost, priority, confidence, and lifecycle status. Savings are
+scenario estimates based on the observed recent-versus-baseline delta projected
+to 30 days; they are explicitly not guaranteed savings. Detection, scoring,
+savings, and prioritization are provider-independent and do not use an LLM.
+
+Records are deduplicated before evaluation. Redis keys include user scope, all
+query inputs, and the rule version; lifecycle status is stored separately with
+the same scope. Authenticated list, detail, and status endpoints support filters,
+sorting, and pagination. The dashboard exposes evidence review and Cost Explorer
+drill-down, and no endpoint modifies cloud resources automatically.
+
 ## Cost Forecasting (Sprint 1.9)
 
 `GET /api/v1/forecast` uses the normalized `CostRecord` data layer shared with
