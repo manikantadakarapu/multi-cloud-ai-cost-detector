@@ -143,7 +143,9 @@ async def test_missing_dates_duplicates_and_recent_spike_are_transparent():
 
 def test_invalid_horizon_and_bounds_are_rejected():
     with pytest.raises(ValidationError):
-        ForecastQuery(start_date=date(2026, 8, 1), end_date=date(2026, 8, 30), horizon_days=8)
+        ForecastQuery(
+            start_date=date(2026, 8, 1), end_date=date(2026, 8, 30), horizon_days=8
+        )
 
 
 @pytest.mark.asyncio
@@ -191,10 +193,13 @@ async def test_forecast_endpoint_returns_typed_response(auth_client: AsyncClient
 
 @pytest.mark.asyncio
 async def test_completed_forecast_accuracy_uses_only_matching_actuals():
-    response = await ForecastingService(explorer=FakeExplorer(records())).forecast(query())
+    response = await ForecastingService(explorer=FakeExplorer(records())).forecast(
+        query()
+    )
     forecast = response.forecasts[0]
     actuals = {
-        point.date: point.forecast_cost + Decimal("1.00") for point in forecast.daily_forecast
+        point.date: point.forecast_cost + Decimal("1.00")
+        for point in forecast.daily_forecast
     }
 
     accuracy = calculate_accuracy(forecast, actuals)

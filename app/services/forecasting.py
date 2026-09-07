@@ -37,7 +37,9 @@ def _quantize(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def _filter_records(records: Iterable[CostRecord], query: ForecastQuery) -> list[CostRecord]:
+def _filter_records(
+    records: Iterable[CostRecord], query: ForecastQuery
+) -> list[CostRecord]:
     filtered = []
     for record in records:
         if record.date < query.start_date or record.date > query.end_date:
@@ -45,7 +47,8 @@ def _filter_records(records: Iterable[CostRecord], query: ForecastQuery) -> list
         if query.provider and record.provider.lower() != query.provider.lower():
             continue
         if query.account_id and (
-            not record.account_id or query.account_id.lower() not in record.account_id.lower()
+            not record.account_id
+            or query.account_id.lower() not in record.account_id.lower()
         ):
             continue
         if query.service and query.service.lower() not in record.service.lower():
@@ -160,7 +163,8 @@ def _slope(values: list[Decimal]) -> Decimal:
     mean_x = (count - 1) / Decimal("2")
     mean_y = sum(values, ZERO) / count
     numerator = sum(
-        (Decimal(index) - mean_x) * (value - mean_y) for index, value in enumerate(values)
+        (Decimal(index) - mean_x) * (value - mean_y)
+        for index, value in enumerate(values)
     )
     denominator = sum((Decimal(index) - mean_x) ** 2 for index in range(len(values)))
     return numerator / denominator if denominator else ZERO
@@ -177,7 +181,9 @@ def _confidence(level: Decimal, spread: Decimal, points: int) -> str:
     return "low"
 
 
-def calculate_accuracy(forecast: ForecastResult, actuals: dict[date, Decimal]) -> ForecastAccuracy:
+def calculate_accuracy(
+    forecast: ForecastResult, actuals: dict[date, Decimal]
+) -> ForecastAccuracy:
     """Compare completed daily forecasts with normalized actual costs."""
     pairs = [
         (point.forecast_cost, actuals[point.date])
@@ -195,9 +201,11 @@ def calculate_accuracy(forecast: ForecastResult, actuals: dict[date, Decimal]) -
     return ForecastAccuracy(
         observations=len(pairs),
         mean_absolute_error=_quantize(sum(errors, ZERO) / Decimal(len(errors))),
-        mean_absolute_percentage_error=_quantize(sum(valid_mape, ZERO) / Decimal(len(valid_mape)))
-        if valid_mape
-        else None,
+        mean_absolute_percentage_error=(
+            _quantize(sum(valid_mape, ZERO) / Decimal(len(valid_mape)))
+            if valid_mape
+            else None
+        ),
     )
 
 
@@ -212,7 +220,9 @@ class ForecastingService:
     ) -> None:
         self._cache = cache
         self._user_scope = user_scope
-        self._explorer = explorer or CostExplorerService(cache=cache, user_scope=user_scope)
+        self._explorer = explorer or CostExplorerService(
+            cache=cache, user_scope=user_scope
+        )
 
     def _cache_key(self, query: ForecastQuery) -> str:
         digest = hashlib.sha256(query.model_dump_json().encode()).hexdigest()[:20]
@@ -223,9 +233,11 @@ class ForecastingService:
         query: ForecastQuery, quality: ForecastDataQuality, message: str
     ) -> ForecastResponse:
         return ForecastResponse(
-            status=ForecastStatus.EMPTY
-            if quality.available_observations == 0
-            else ForecastStatus.INSUFFICIENT_DATA,
+            status=(
+                ForecastStatus.EMPTY
+                if quality.available_observations == 0
+                else ForecastStatus.INSUFFICIENT_DATA
+            ),
             query=query,
             summary=ForecastSummary(
                 current_spend=ZERO,
@@ -242,7 +254,11 @@ class ForecastingService:
         )
 
     def _forecast_group(
-        self, key: str, records: list[CostRecord], query: ForecastQuery, missing: list[date]
+        self,
+        key: str,
+        records: list[CostRecord],
+        query: ForecastQuery,
+        missing: list[date],
     ) -> ForecastResult | None:
         daily, _ = _daily_values(records, query.start_date, query.end_date)
         if len(daily) < MIN_OBSERVATIONS:
@@ -259,7 +275,9 @@ class ForecastingService:
         for index, value in enumerate(values):
             fitted = level + trend * Decimal(index - len(values) + 1)
             residuals.append(abs(value - fitted))
-        spread = max(_median(residuals) * Decimal("2"), level * Decimal("0.10"), Decimal("0.01"))
+        spread = max(
+            _median(residuals) * Decimal("2"), level * Decimal("0.10"), Decimal("0.01")
+        )
         confidence = _confidence(level, spread, len(values))
         forecast_start = query.end_date + timedelta(days=1)
         daily_forecast: list[DailyForecast] = []
@@ -283,14 +301,20 @@ class ForecastingService:
         lower_total = sum((point.lower_bound for point in daily_forecast), ZERO)
         upper_total = sum((point.upper_bound for point in daily_forecast), ZERO)
         source = records[0] if records else None
-        payload = f"{self._user_scope}|{query.model_dump_json()}|{key}|{METHODOLOGY_VERSION}"
+        payload = (
+            f"{self._user_scope}|{query.model_dump_json()}|{key}|{METHODOLOGY_VERSION}"
+        )
         return ForecastResult(
             forecast_id=hashlib.sha256(payload.encode()).hexdigest()[:24],
             dimension=query.dimension,
             dimension_value=key,
-            provider=key if query.dimension is ForecastDimension.PROVIDER else query.provider,
+            provider=(
+                key if query.dimension is ForecastDimension.PROVIDER else query.provider
+            ),
             account_id=query.account_id,
-            service=key if query.dimension is ForecastDimension.SERVICE else query.service,
+            service=(
+                key if query.dimension is ForecastDimension.SERVICE else query.service
+            ),
             region=key if query.dimension is ForecastDimension.REGION else query.region,
             forecast_start=forecast_start,
             forecast_end=forecast_start + timedelta(days=query.horizon_days - 1),
@@ -299,7 +323,9 @@ class ForecastingService:
             historical_cost=_quantize(historical_cost),
             projected_cost=_quantize(projected),
             daily_forecast=daily_forecast,
-            historical_daily=[DailyActual(date=day, cost=_quantize(value)) for day, value in daily],
+            historical_daily=[
+                DailyActual(date=day, cost=_quantize(value)) for day, value in daily
+            ],
             lower_bound=_quantize(lower_total),
             upper_bound=_quantize(upper_total),
             methodology=(
@@ -323,7 +349,9 @@ class ForecastingService:
                 except Exception:
                     logger.warning("forecast_cache_invalid")
         records = _filter_records(
-            await self._explorer.get_cost_records(query.start_date, query.end_date, query.provider),
+            await self._explorer.get_cost_records(
+                query.start_date, query.end_date, query.provider
+            ),
             query,
         )
         records, duplicate_count = _unique_records(records)
@@ -335,7 +363,9 @@ class ForecastingService:
                 warnings=["No normalized cost records matched the filters."],
             )
             return self._empty_response(
-                query, quality, "Forecast unavailable because no cost data matched the filters."
+                query,
+                quality,
+                "Forecast unavailable because no cost data matched the filters.",
             )
         currencies = {record.currency for record in records}
         warnings: list[str] = []
@@ -355,7 +385,9 @@ class ForecastingService:
             if result:
                 results.append(result)
                 all_excluded.extend(result.excluded_anomaly_dates)
-        all_daily, all_missing = _daily_values(records, query.start_date, query.end_date)
+        all_daily, all_missing = _daily_values(
+            records, query.start_date, query.end_date
+        )
         quality = ForecastDataQuality(
             available_observations=len(all_daily) - len(all_missing),
             required_observations=MIN_OBSERVATIONS,
@@ -374,7 +406,9 @@ class ForecastingService:
         projected = sum((result.projected_cost for result in results), ZERO)
         historical = sum((result.historical_cost for result in results), ZERO)
         days = max((query.end_date - query.start_date).days + 1, 1)
-        average = _quantize(sum((record.cost for record in records), ZERO) / Decimal(days))
+        average = _quantize(
+            sum((record.cost for record in records), ZERO) / Decimal(days)
+        )
         change = (
             _quantize((projected - historical) / historical * Decimal("100"))
             if historical

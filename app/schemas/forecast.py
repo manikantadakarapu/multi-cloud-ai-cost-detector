@@ -75,7 +75,10 @@ class DailyForecast(BaseModel):
 
     @model_validator(mode="after")
     def validate_bounds(self) -> DailyForecast:
-        if self.lower_bound > self.forecast_cost or self.forecast_cost > self.upper_bound:
+        if (
+            self.lower_bound > self.forecast_cost
+            or self.forecast_cost > self.upper_bound
+        ):
             raise ValueError("forecast bounds must contain the forecast cost")
         return self
 
@@ -125,7 +128,10 @@ class ForecastResult(BaseModel):
 
     @model_validator(mode="after")
     def validate_total_bounds(self) -> ForecastResult:
-        if self.lower_bound > self.projected_cost or self.projected_cost > self.upper_bound:
+        if (
+            self.lower_bound > self.projected_cost
+            or self.projected_cost > self.upper_bound
+        ):
             raise ValueError("forecast bounds must contain the projected cost")
         return self
 
