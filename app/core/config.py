@@ -270,6 +270,22 @@ class Settings(BaseSettings):
         default=900, ge=1, validation_alias="ANOMALY_CACHE_TTL_SECONDS"
     )
 
+    # --- Cost alerts and email notifications (Sprint 2.2) ---
+    alerts_scheduler_enabled: bool = Field(
+        default=False, validation_alias="ALERTS_SCHEDULER_ENABLED"
+    )
+    alerts_evaluation_interval_seconds: int = Field(
+        default=900, ge=60, validation_alias="ALERTS_EVALUATION_INTERVAL_SECONDS"
+    )
+    alert_email_enabled: bool = Field(
+        default=False, validation_alias="ALERT_EMAIL_ENABLED"
+    )
+    alert_smtp_host: str | None = Field(default=None, validation_alias="ALERT_SMTP_HOST")
+    alert_smtp_port: int = Field(default=587, ge=1, le=65535, validation_alias="ALERT_SMTP_PORT")
+    alert_smtp_username: str | None = Field(default=None, validation_alias="ALERT_SMTP_USERNAME")
+    alert_smtp_password: str | None = Field(default=None, validation_alias="ALERT_SMTP_PASSWORD")
+    alert_email_from: str | None = Field(default=None, validation_alias="ALERT_EMAIL_FROM")
+
     @computed_field
     @property
     def is_production(self) -> bool:

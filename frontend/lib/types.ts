@@ -339,3 +339,32 @@ export type OptimizationAdvisor = {
   prompt_version: string;
   fallback_message: string | null;
 };
+export type AlertType = "cost_threshold" | "cost_increase" | "anomaly" | "forecast_threshold";
+export type AlertSeverity = "low" | "medium" | "high" | "critical";
+export type Alert = {
+  id: string;
+  user_id: string;
+  name: string;
+  alert_type: AlertType;
+  provider: string | null;
+  account_id: string | null;
+  service: string | null;
+  region: string | null;
+  threshold: string | null;
+  percentage: string | null;
+  severity: AlertSeverity;
+  enabled: boolean;
+  cooldown_minutes: number;
+  last_triggered_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type AlertEvaluationResult = {
+  alert_id: string;
+  status: string;
+  reason: string;
+  notification_sent: boolean;
+  notification_error: string | null;
+  current_value: string | null;
+  threshold: string | null;
+};

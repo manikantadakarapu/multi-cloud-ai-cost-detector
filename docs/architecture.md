@@ -1000,6 +1000,23 @@ prompt version, and model, preventing stale explanations after evidence changes.
 The feature is advisory only and does not modify cloud resources, create new
 recommendations, calculate savings, or change recommendation status or priority.
 
+## Cost Alerts and Notifications (Sprint 2.2)
+
+Alerts are persisted in the user-scoped `alerts` table and expose authenticated
+CRUD endpoints under `/api/v1/alerts`. A single deterministic evaluator supports
+daily cost thresholds, percentage increases over the selected comparison period,
+qualifying results from the existing anomaly detector, and projected cost from the
+existing forecasting service. Each evaluation returns an explainable reason and
+current value; no LLM participates in triggering.
+
+Triggered alerts are checked against `last_triggered_at` and their configured
+cooldown before delivery. The timestamp is persisted only after SMTP delivery
+succeeds, so provider or email failures do not suppress a later retry. Email is
+the only notification channel in this sprint and uses configuration-driven SMTP
+credentials. The optional scheduler is disabled by default and can be enabled
+with `ALERTS_SCHEDULER_ENABLED`; `POST /api/v1/alerts/evaluate` is also available
+as a simple external scheduler hook.
+
 ## Cost Optimization Recommendations (Sprint 2.0)
 
 `GET /api/v1/optimization/recommendations` builds advisory recommendations from

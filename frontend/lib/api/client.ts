@@ -1,4 +1,4 @@
-import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
+import type { Alert, AlertEvaluationResult, AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -256,4 +256,24 @@ export function explainOptimizationRecommendation(id: string, params: { start_da
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+export function getAlerts() {
+  return request<Alert[]>("/alerts");
+}
+
+export function createAlert(payload: Omit<Alert, "id" | "user_id" | "last_triggered_at" | "created_at" | "updated_at">) {
+  return request<Alert>("/alerts", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateAlert(id: string, payload: Partial<Pick<Alert, "name" | "alert_type" | "provider" | "account_id" | "service" | "region" | "threshold" | "percentage" | "severity" | "enabled" | "cooldown_minutes">>) {
+  return request<Alert>(`/alerts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function deleteAlert(id: string) {
+  return request<void>(`/alerts/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export function evaluateAlerts(params: { start_date: string; end_date: string }) {
+  return request<AlertEvaluationResult[]>("/alerts/evaluate", { method: "POST", body: JSON.stringify(params) });
 }

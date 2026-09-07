@@ -9,6 +9,7 @@ in :mod:`app.main`, not here, because it lives at ``/`` rather than under
 
 from fastapi import APIRouter
 
+from app.api.routes.alerts import router as alerts_router
 from app.api.routes.analytics import router as analytics_router
 from app.api.routes.anomalies import router as anomalies_router
 from app.api.routes.aws import router as aws_router
@@ -33,5 +34,6 @@ api_router.include_router(explorer_router)
 api_router.include_router(forecast_router)
 api_router.include_router(optimization_router)
 api_router.include_router(analytics_router)
+api_router.include_router(alerts_router)
 api_router.include_router(anomalies_router)
 api_router.include_router(auth_router)

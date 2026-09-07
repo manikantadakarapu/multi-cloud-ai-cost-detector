@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 2.2 Cost Alerts & Notifications:
+  - User-scoped persisted alerts for daily thresholds, percentage increases, deterministic anomalies, and forecast thresholds.
+  - Authenticated CRUD and evaluation APIs with deterministic reasons, cooldown/deduplication, and email notification failure safety.
+  - Configuration-driven SMTP email delivery and an optional lightweight periodic evaluator.
+  - Dashboard Alerts section with create, edit, enable/disable, evaluate-now, and delete actions.
+
 - Sprint 2.1 AI FinOps Advisor:
   - On-demand Gemini explanations for existing deterministic optimization recommendations.
   - Versioned verified context combining recommendation evidence, Cost Explorer history, anomalies, and forecasts where available.
