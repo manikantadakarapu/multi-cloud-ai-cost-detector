@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 2.1 AI FinOps Advisor:
+  - On-demand Gemini explanations for existing deterministic optimization recommendations.
+  - Versioned verified context combining recommendation evidence, Cost Explorer history, anomalies, and forecasts where available.
+  - Strict structured response validation, numeric/evidence guardrails, safe deterministic fallback, and versioned Redis caching.
+  - Authenticated recommendation advisor API and dashboard review panel with loading, failure, and insufficient-data states.
+
 - Sprint 2.0 deterministic Cost Optimization & FinOps Recommendations:
   - Provider-independent evidence rules for sustained growth, persistent high-cost services, storage, and network cost signals.
   - Typed recommendation evidence, scenario savings ranges, priority/confidence, lifecycle status, deduplication, and versioned Redis caching.

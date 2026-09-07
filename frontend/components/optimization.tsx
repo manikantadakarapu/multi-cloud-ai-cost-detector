@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ApiError, getOptimizationRecommendations, updateOptimizationStatus } from "../lib/api/client";
+import { ApiError, explainOptimizationRecommendation, getOptimizationRecommendations, updateOptimizationStatus } from "../lib/api/client";
 import { formatMoney, getDateRange } from "../lib/dates";
-import type { OptimizationRecommendation, OptimizationStatus } from "../lib/types";
+import type { OptimizationAdvisor, OptimizationRecommendation, OptimizationStatus } from "../lib/types";
 
 type Focus = { provider?: string; service?: string; region?: string; account_id?: string };
 
@@ -11,6 +11,9 @@ export default function Optimization({ onInvestigate }: { onInvestigate: (filter
   const range = useMemo(() => getDateRange("30d"), []);
   const [data, setData] = useState<Awaited<ReturnType<typeof getOptimizationRecommendations>> | null>(null);
   const [selected, setSelected] = useState<OptimizationRecommendation | null>(null);
+  const [advisor, setAdvisor] = useState<OptimizationAdvisor | null>(null);
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,6 +45,19 @@ export default function Optimization({ onInvestigate }: { onInvestigate: (filter
     }
   }
 
+  async function askAdvisor() {
+    if (!selected) return;
+    setAdvisorLoading(true);
+    setAdvisorError("");
+    try {
+      setAdvisor(await explainOptimizationRecommendation(selected.recommendation_id, range));
+    } catch (exception) {
+      setAdvisorError(exception instanceof ApiError && exception.status === 401 ? "Your session has expired. Please sign in again." : "AI Advisor is unavailable. The deterministic recommendation remains available.");
+    } finally {
+      setAdvisorLoading(false);
+    }
+  }
+
   return (
     <>
       <section className="dashboard-header">
@@ -61,9 +77,9 @@ export default function Optimization({ onInvestigate }: { onInvestigate: (filter
         {!data.recommendations.length && !data.insufficient_data ? <div className="empty-state">No recommendations match the current filters.</div> : null}
         <section className="optimization-layout">
           <div className="panel"><div className="panel-heading"><div><span className="card-label">Review queue</span><h3>Optimization recommendations</h3></div><span className="currency-badge">{data.rule_version}</span></div><div className="service-list">
-            {data.recommendations.map((item) => <button type="button" className="optimization-row" key={item.recommendation_id} onClick={() => setSelected(item)}><div><strong>{item.title}</strong><small>{item.provider} · {item.service} · {item.category.replaceAll("_", " ")}</small></div><div className="optimization-row-meta"><span className={`badge ${item.priority}`}>{item.priority}</span><strong>{item.estimated_monthly_savings === null ? "Review" : formatMoney(item.estimated_monthly_savings, item.savings_currency)}</strong></div></button>)}
+            {data.recommendations.map((item) => <button type="button" className="optimization-row" key={item.recommendation_id} onClick={() => { setSelected(item); setAdvisor(null); setAdvisorError(""); }}><div><strong>{item.title}</strong><small>{item.provider} · {item.service} · {item.category.replaceAll("_", " ")}</small></div><div className="optimization-row-meta"><span className={`badge ${item.priority}`}>{item.priority}</span><strong>{item.estimated_monthly_savings === null ? "Review" : formatMoney(item.estimated_monthly_savings, item.savings_currency)}</strong></div></button>)}
           </div></div>
-          {selected ? <aside className="panel optimization-detail"><div className="panel-heading"><div><span className="card-label">Recommendation detail</span><h3>{selected.service}</h3></div><button className="ghost-button" onClick={() => setSelected(null)}>Close</button></div><p className="muted">{selected.description}</p><p>{selected.rationale}</p><div className="optimization-actions"><select className="filter-select" aria-label="Recommendation status" value={selected.status} onChange={(event) => void changeStatus(event.target.value as OptimizationStatus)}><option value="new">New</option><option value="reviewed">Reviewed</option><option value="dismissed">Dismissed</option><option value="implemented">Implemented</option></select><button className="ghost-button" onClick={() => onInvestigate({ provider: selected.provider, service: selected.service, region: selected.region || undefined, account_id: selected.account_id || undefined })}>Open in Cost Explorer</button></div><h4>Verified evidence</h4><div className="service-list">{selected.evidence.map((item) => <div className="service-row" key={item.label}><span>{item.label}<small>{item.source}</small></span><strong>{item.value}</strong></div>)}</div><p className="forecast-note">{selected.savings_explanation || "No savings estimate is available from the observed data."}</p></aside> : null}
+          {selected ? <aside className="panel optimization-detail"><div className="panel-heading"><div><span className="card-label">Recommendation detail</span><h3>{selected.service}</h3></div><button className="ghost-button" onClick={() => setSelected(null)}>Close</button></div><p className="muted">{selected.description}</p><p>{selected.rationale}</p><div className="optimization-actions"><select className="filter-select" aria-label="Recommendation status" value={selected.status} onChange={(event) => void changeStatus(event.target.value as OptimizationStatus)}><option value="new">New</option><option value="reviewed">Reviewed</option><option value="dismissed">Dismissed</option><option value="implemented">Implemented</option></select><button className="ghost-button" onClick={() => onInvestigate({ provider: selected.provider, service: selected.service, region: selected.region || undefined, account_id: selected.account_id || undefined })}>Open in Cost Explorer</button><button className="primary-button advisor-button" onClick={() => void askAdvisor()} disabled={advisorLoading}>{advisorLoading ? "Asking AI Advisor…" : "Ask AI Advisor"}</button></div><h4>Verified evidence</h4><div className="service-list">{selected.evidence.map((item) => <div className="service-row" key={item.label}><span>{item.label}<small>{item.source}</small></span><strong>{item.value}</strong></div>)}</div><p className="forecast-note">{selected.savings_explanation || "No savings estimate is available from the observed data."}</p>{advisorError ? <div className="error-banner" role="alert"><span>{advisorError}</span></div> : null}{advisor ? <section className="advisor-panel" aria-label="AI FinOps Advisor"><div className="panel-heading"><div><span className="card-label">AI FinOps Advisor</span><h4>{advisor.status === "ready" ? "Evidence-based context" : "Deterministic fallback"}</h4></div><span className={`badge ${advisor.status}`}>{advisor.status}</span></div>{advisor.summary ? <><h4>Summary</h4><p>{advisor.summary}</p></> : null}{advisor.why_it_matters ? <><h4>Why it matters</h4><p>{advisor.why_it_matters}</p></> : null}{advisor.evidence_summary ? <><h4>Evidence summary</h4><p>{advisor.evidence_summary}</p></> : null}<h4>Trade-offs</h4><ul>{advisor.tradeoffs.map((item) => <li key={item}>{item}</li>)}</ul><h4>Suggested next steps</h4><ul>{advisor.suggested_next_steps.map((item) => <li key={item}>{item}</li>)}</ul>{advisor.expected_impact ? <><h4>Expected impact</h4><p>{advisor.expected_impact}</p></> : null}<p className="forecast-note">Confidence: {advisor.confidence || "unknown"}. {advisor.fallback_message || "The deterministic recommendation remains authoritative."}</p>{advisor.limitations.length ? <><h4>Limitations</h4><ul>{advisor.limitations.map((item) => <li key={item}>{item}</li>)}</ul></> : null}</section> : null}</aside> : null}
         </section>
       </> : null}
     </>

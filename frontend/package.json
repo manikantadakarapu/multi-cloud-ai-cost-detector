@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --root . --environment node lib/ai-insights.test.ts lib/dates.test.ts lib/explorer.test.ts"
+    "test": "vitest run --root . --environment node lib/ai-insights.test.ts lib/dates.test.ts lib/explorer.test.ts lib/optimization-advisor.test.ts"
   },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^8.67.0",

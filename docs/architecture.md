@@ -979,6 +979,27 @@ Explanation cache keys include user scope, anomaly ID, context version, prompt
 version, and model. Anomaly detection and scoring remain deterministic and
 AI-independent; AI is used only for explanation and investigation assistance.
 
+## AI FinOps Advisor (Sprint 2.1)
+
+`POST /api/v1/optimization/recommendations/{recommendation_id}/advisor` provides
+an on-demand explanation of one existing Sprint 2.0 recommendation. The service
+resolves the deterministic recommendation, builds a facts-only context from its
+evidence, matching Cost Explorer aggregates, related anomaly results, and the
+deterministic forecast when available, then sends only that typed context to the
+existing Gemini client.
+
+The response separates summary, rationale, evidence, trade-offs, investigation
+steps, expected impact, confidence, and limitations. The recommendation object
+remains application-owned and authoritative. Model output is rejected when it
+contains unsupported numerical claims or says that remediation was executed.
+Disabled, unavailable, timed-out, invalid, and sparse-data cases return a
+deterministic fallback without losing the recommendation.
+
+Advisor cache keys include user scope, serialized context, context version,
+prompt version, and model, preventing stale explanations after evidence changes.
+The feature is advisory only and does not modify cloud resources, create new
+recommendations, calculate savings, or change recommendation status or priority.
+
 ## Cost Optimization Recommendations (Sprint 2.0)
 
 `GET /api/v1/optimization/recommendations` builds advisory recommendations from

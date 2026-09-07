@@ -311,3 +311,31 @@ export type OptimizationResponse = {
   insufficient_data: boolean;
   message: string | null;
 };
+export type OptimizationAdvisorStatus = "ready" | "disabled" | "unavailable" | "timeout" | "invalid" | "insufficient_data";
+export type OptimizationAdvisor = {
+  recommendation: OptimizationRecommendation;
+  context: {
+    context_version: string;
+    recommendation: OptimizationRecommendation;
+    historical_cost: string | null;
+    cost_trend: { date: string; cost: string }[];
+    related_anomalies: CostAnomaly[];
+    forecast: ForecastResult | null;
+    explorer: { record_count: number; total_cost: string; currency: string | null; daily_costs: { date: string; cost: string }[] } | null;
+    data_freshness: string | null;
+    missing_data: string[];
+  };
+  status: OptimizationAdvisorStatus;
+  summary: string | null;
+  why_it_matters: string | null;
+  evidence_summary: string | null;
+  tradeoffs: string[];
+  suggested_next_steps: string[];
+  expected_impact: string | null;
+  confidence: "low" | "medium" | "high" | null;
+  limitations: string[];
+  generated_at: string | null;
+  model: string | null;
+  prompt_version: string;
+  fallback_message: string | null;
+};
