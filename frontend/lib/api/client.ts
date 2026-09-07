@@ -1,4 +1,4 @@
-import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
+import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -248,5 +248,12 @@ export function updateOptimizationStatus(id: string, status: OptimizationStatus,
   return request<OptimizationRecommendation>(`/optimization/recommendations/${encodeURIComponent(id)}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status, ...params }),
+  });
+}
+
+export function explainOptimizationRecommendation(id: string, params: { start_date: string; end_date: string }) {
+  return request<OptimizationAdvisor>(`/optimization/recommendations/${encodeURIComponent(id)}/advisor`, {
+    method: "POST",
+    body: JSON.stringify(params),
   });
 }

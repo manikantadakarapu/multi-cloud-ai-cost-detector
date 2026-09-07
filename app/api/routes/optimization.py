@@ -16,6 +16,14 @@ from app.schemas.optimization import (
     Recommendation,
     RecommendationStatusUpdate,
 )
+from app.schemas.optimization_advisor import (
+    OptimizationAdvisorRequest,
+    OptimizationAdvisorResponse,
+)
+from app.services.ai.optimization_advisor import (
+    OptimizationAdvisorService,
+    RecommendationNotFoundError,
+)
 from app.services.optimization import OptimizationService
 
 router = APIRouter(prefix="/optimization", tags=["optimization"])
@@ -26,6 +34,13 @@ def get_optimization_service(
     cache: Annotated[RedisCache, Depends(get_cache)],
 ) -> OptimizationService:
     return OptimizationService(cache=cache, user_scope=str(current_user.id))
+
+
+def get_optimization_advisor_service(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    cache: Annotated[RedisCache, Depends(get_cache)],
+) -> OptimizationAdvisorService:
+    return OptimizationAdvisorService(cache=cache, user_scope=str(current_user.id))
 
 
 @router.get(
@@ -87,3 +102,28 @@ async def update_recommendation_status(
             status_code=status.HTTP_404_NOT_FOUND, detail="Recommendation not found"
         )
     return recommendation
+
+
+@router.post(
+    "/recommendations/{recommendation_id}/advisor",
+    response_model=OptimizationAdvisorResponse,
+    summary="Explain one deterministic FinOps recommendation",
+    responses={
+        404: {"description": "Recommendation not found for the supplied period."}
+    },
+)
+@enforce_cost_rate_limit
+async def explain_recommendation(
+    recommendation_id: str,
+    request: Request,
+    advisor_request: OptimizationAdvisorRequest,
+    service: Annotated[
+        OptimizationAdvisorService, Depends(get_optimization_advisor_service)
+    ],
+) -> OptimizationAdvisorResponse:
+    try:
+        return await service.explain(recommendation_id, advisor_request)
+    except RecommendationNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(error)
+        ) from error

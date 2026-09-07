@@ -35,6 +35,11 @@ Recommendations include verified evidence, scenario savings estimates, priority,
 confidence, lifecycle status, filters, Redis caching, and Cost Explorer drill-down.
 The feature is advisory only and never changes cloud resources automatically.
 
+Sprint 2.1 adds an on-demand AI FinOps Advisor that explains existing
+deterministic recommendations using verified recommendation, historical cost,
+anomaly, and forecast context. AI output is structured and guarded; it cannot
+create recommendations, alter scores or savings, or claim remediation was run.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
