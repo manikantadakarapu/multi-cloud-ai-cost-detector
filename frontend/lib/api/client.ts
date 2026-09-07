@@ -1,4 +1,4 @@
-import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, TokenResponse } from "../types";
+import type { AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -203,4 +203,13 @@ export function explainAnomaly(anomalyId: string, params: {
     method: "POST",
     body: JSON.stringify(params),
   });
+}
+
+export function getForecast(params: { start_date: string; end_date: string; horizon_days: number; provider?: string; account_id?: string; service?: string; region?: string; currency?: string; dimension?: string }) {
+  const query = new URLSearchParams({ start_date: params.start_date, end_date: params.end_date, horizon_days: String(params.horizon_days) });
+  for (const key of ["provider", "account_id", "service", "region", "currency", "dimension"] as const) {
+    const value = params[key];
+    if (value) query.set(key, value);
+  }
+  return request<ForecastResponse>(`/forecast?${query.toString()}`);
 }
