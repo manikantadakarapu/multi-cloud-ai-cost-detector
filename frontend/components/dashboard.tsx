@@ -7,6 +7,7 @@ import { formatDateLabel, formatMoney, formatPercent, getDateRange, titleCasePro
 import type { AIInsight, CostAnomaly, CostInsight, DashboardInsights, DashboardSummary, DatePreset } from "../lib/types";
 import Anomalies from "./anomalies";
 import Alerts from "./alerts";
+import Budgets from "./budgets";
 import CostExplorer from "./explorer";
 import Forecast from "./forecast";
 import Optimization from "./optimization";
@@ -109,7 +110,7 @@ function Insights({
   );
 }
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies" | "optimization" | "alerts">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "explorer" | "anomalies" | "optimization" | "alerts" | "budgets">("dashboard");
   const [explorerFocus, setExplorerFocus] = useState<CostAnomaly | null>(null);
   const [preset, setPreset] = useState<DatePreset>("30d");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -175,6 +176,7 @@ export default function Dashboard() {
         </button>
         <button type="button" className={`view-tab ${activeTab === "optimization" ? "active" : ""}`} onClick={() => setActiveTab("optimization")}>Cost Optimization</button>
         <button type="button" className={`view-tab ${activeTab === "alerts" ? "active" : ""}`} onClick={() => setActiveTab("alerts")}>Cost Alerts</button>
+        <button type="button" className={`view-tab ${activeTab === "budgets" ? "active" : ""}`} onClick={() => setActiveTab("budgets")}>Budgets</button>
       </div>
 
       {activeTab === "explorer" ? (
@@ -185,6 +187,8 @@ export default function Dashboard() {
         <Optimization onInvestigate={(filters) => { setExplorerFocus({ provider: filters.provider || "", service: filters.service || "", region: filters.region || null, account_id: filters.account_id || null } as CostAnomaly); setActiveTab("explorer"); }} />
       ) : activeTab === "alerts" ? (
         <Alerts />
+      ) : activeTab === "budgets" ? (
+        <Budgets />
       ) : (
         <>
           <section className="dashboard-header" id="dashboard">

@@ -1017,6 +1017,30 @@ credentials. The optional scheduler is disabled by default and can be enabled
 with `ALERTS_SCHEDULER_ENABLED`; `POST /api/v1/alerts/evaluate` is also available
 as a simple external scheduler hook.
 
+## Cost Budgets and Guardrails (Sprint 2.3)
+
+Budgets are persisted in the user-scoped `budgets` table and expose authenticated
+CRUD endpoints under `/api/v1/budgets`. The model is provider-independent and
+supports monthly periods with the same provider, account/project, service, and
+region filters used by Cost Explorer. The database remains the source of truth
+for configuration; the evaluation cache includes the budget update timestamp so
+budget changes do not reuse an older configuration.
+
+`BudgetEvaluationService` loads normalized Cost Explorer records, validates a
+single currency, and calculates actual spend, utilization, remaining amount, and
+deterministic healthy/warning/critical/exceeded states. It calls the existing
+forecasting service for the remaining days in the month and exposes forecast
+spend, variance, and forecast status separately from actual status. Empty cost
+data, insufficient forecast history, disabled budgets, and currency mismatches
+remain explicit outcomes; values are never estimated by an LLM or silently
+converted.
+
+The dashboard Budgets section provides CRUD controls, progress indicators, actual
+and forecast status, deterministic reasons, and links conceptually to the same
+Cost Explorer filters. Sprint 2.2 notification rules are not redesigned: budget
+evaluation is visibility/control-plane only, with no automatic resource changes
+or second notification framework.
+
 ## Cost Optimization Recommendations (Sprint 2.0)
 
 `GET /api/v1/optimization/recommendations` builds advisory recommendations from

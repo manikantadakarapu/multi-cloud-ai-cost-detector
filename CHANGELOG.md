@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sprint 2.3 Cost Budgets & Guardrails:
+  - User-scoped monthly budgets with provider, account, service, and region filters.
+  - Deterministic actual utilization, remaining spend, warning/critical/exceeded states, and separate forecast-aware status.
+  - Authenticated CRUD and evaluation APIs with explicit missing-data and currency-mismatch handling.
+  - Redis evaluation caching keyed by budget configuration and update timestamp.
+  - Budgets dashboard with progress indicators, evaluation reasons, forecast visibility, and enable/disable controls.
+  - No autonomous remediation, provider budget API integration, or AI-generated budget calculations.
+
 - Sprint 2.2 Cost Alerts & Notifications:
   - User-scoped persisted alerts for daily thresholds, percentage increases, deterministic anomalies, and forecast thresholds.
   - Authenticated CRUD and evaluation APIs with deterministic reasons, cooldown/deduplication, and email notification failure safety.

@@ -368,3 +368,43 @@ export type AlertEvaluationResult = {
   current_value: string | null;
   threshold: string | null;
 };
+
+export type BudgetScope = "total" | "provider" | "account" | "service" | "region";
+export type BudgetPeriod = "monthly";
+export type BudgetStatus = "healthy" | "warning" | "critical" | "exceeded" | "unavailable" | "disabled";
+export type Budget = {
+  id: string;
+  user_id: string;
+  name: string;
+  scope: BudgetScope;
+  provider: string | null;
+  account_id: string | null;
+  service: string | null;
+  region: string | null;
+  period: BudgetPeriod;
+  amount: string;
+  currency: string;
+  warning_threshold: string;
+  critical_threshold: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+export type BudgetEvaluation = {
+  budget_id: string;
+  actual_spend: string;
+  budget_amount: string;
+  actual_utilization: string;
+  actual_remaining: string;
+  actual_status: BudgetStatus;
+  forecast_spend: string | null;
+  forecast_variance: string | null;
+  forecast_status: BudgetStatus;
+  evaluation_period: string;
+  currency: string;
+  scope: string;
+  reason: string;
+  data_available: boolean;
+  forecast_available: boolean;
+  evaluated_at: string;
+};

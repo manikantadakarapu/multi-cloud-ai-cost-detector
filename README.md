@@ -46,6 +46,13 @@ delivery through configured SMTP, CRUD APIs, optional periodic evaluation, and a
 simple dashboard management view. Alert triggering never uses an LLM or changes
 cloud resources.
 
+Sprint 2.3 adds monthly Cost Budgets & Guardrails with provider, account,
+service, and region scope filters. Budget evaluations deterministically report
+actual spend, utilization, remaining budget, separate forecast status, and
+threshold reasons through authenticated APIs and the Budgets dashboard. Missing
+cost or forecast data remains explicitly unavailable; no autonomous remediation
+or cloud billing API integration is performed.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost

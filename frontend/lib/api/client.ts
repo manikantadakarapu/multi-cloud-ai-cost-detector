@@ -1,4 +1,4 @@
-import type { Alert, AlertEvaluationResult, AnomalyExplanation, AnomalyResponse, AuthResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
+import type { Alert, AlertEvaluationResult, AnomalyExplanation, AnomalyResponse, AuthResponse, Budget, BudgetEvaluation, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -276,4 +276,24 @@ export function deleteAlert(id: string) {
 
 export function evaluateAlerts(params: { start_date: string; end_date: string }) {
   return request<AlertEvaluationResult[]>("/alerts/evaluate", { method: "POST", body: JSON.stringify(params) });
+}
+
+export function getBudgets() {
+  return request<Budget[]>("/budgets");
+}
+
+export function createBudget(payload: Omit<Budget, "id" | "user_id" | "created_at" | "updated_at">) {
+  return request<Budget>("/budgets", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateBudget(id: string, payload: Partial<Omit<Budget, "id" | "user_id" | "created_at" | "updated_at">>) {
+  return request<Budget>(`/budgets/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export function deleteBudget(id: string) {
+  return request<void>(`/budgets/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export function getBudgetEvaluation(id: string) {
+  return request<BudgetEvaluation>(`/budgets/${encodeURIComponent(id)}/evaluation`);
 }
