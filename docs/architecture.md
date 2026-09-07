@@ -1041,6 +1041,24 @@ Cost Explorer filters. Sprint 2.2 notification rules are not redesigned: budget
 evaluation is visibility/control-plane only, with no automatic resource changes
 or second notification framework.
 
+## FinOps Copilot (Sprint 2.4)
+
+The Copilot is a bounded request/response layer over existing deterministic
+FinOps services. `CopilotContextService` classifies each question locally and
+retrieves only the relevant authorized domains: Cost Explorer, anomalies,
+forecasts, optimization recommendations, or user-scoped budget evaluations.
+The resulting versioned `CopilotContext` is the only application data supplied
+to the existing Gemini client; Gemini never queries a cloud provider directly.
+
+`CopilotService` validates structured output, rejects numerical claims that do
+not occur in the verified context, rejects references to unavailable anomaly,
+recommendation, or budget IDs, and rejects claims that remediation was executed.
+Answers are cached with user scope, full context, prompt version, and model
+version. Unsupported questions, disabled AI, unavailable AI, malformed output,
+and sparse data return deterministic, dashboard-safe responses. The endpoint is
+authenticated at `/api/v1/copilot/query`, and no persistent conversation memory,
+RAG, embeddings, agent loop, or cloud mutation is introduced.
+
 ## Cost Optimization Recommendations (Sprint 2.0)
 
 `GET /api/v1/optimization/recommendations` builds advisory recommendations from

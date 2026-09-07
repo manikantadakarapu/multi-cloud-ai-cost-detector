@@ -1,4 +1,4 @@
-import type { Alert, AlertEvaluationResult, AnomalyExplanation, AnomalyResponse, AuthResponse, Budget, BudgetEvaluation, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
+import type { Alert, AlertEvaluationResult, AnomalyExplanation, AnomalyResponse, AuthResponse, Budget, BudgetEvaluation, CopilotResponse, DashboardInsights, DashboardSummary, ExplorerResponse, ForecastResponse, OptimizationAdvisor, OptimizationResponse, OptimizationRecommendation, OptimizationStatus, TokenResponse } from "../types";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 const API_PREFIX = `${API_BASE_URL}/api/v1`;
@@ -296,4 +296,11 @@ export function deleteBudget(id: string) {
 
 export function getBudgetEvaluation(id: string) {
   return request<BudgetEvaluation>(`/budgets/${encodeURIComponent(id)}/evaluation`);
+}
+
+export function queryCopilot(question: string) {
+  return request<CopilotResponse>("/copilot/query", {
+    method: "POST",
+    body: JSON.stringify({ question }),
+  });
 }

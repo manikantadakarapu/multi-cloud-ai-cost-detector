@@ -53,6 +53,13 @@ threshold reasons through authenticated APIs and the Budgets dashboard. Missing
 cost or forecast data remains explicitly unavailable; no autonomous remediation
 or cloud billing API integration is performed.
 
+Sprint 2.4 adds a bounded FinOps Copilot. Authenticated questions are classified
+deterministically, answered from authorized Cost Explorer, anomaly, forecast,
+optimization, and budget context, and optionally explained by the existing
+Gemini infrastructure. Structured validation, numerical/reference guardrails,
+scoped Redis caching, and deterministic fallback responses prevent unsupported
+claims and autonomous actions.
+
 > **Status:** Sprint 1.6 — Cost Explorer & Drill-Down complete.
 > Backend foundation (Sprint 0.1), engineering documentation (Sprint 0.2),
 > JWT auth (Sprint 0.3), cloud providers (Sprint 0.4–0.6), unified cost
