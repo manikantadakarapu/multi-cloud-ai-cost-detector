@@ -160,27 +160,6 @@ export default function Dashboard() {
 
   return (
     <Shell activeTab={activeTab} onTabChange={setActiveTab}>
-      <div className="view-tabs">
-        <button
-          type="button"
-          className={`view-tab ${activeTab === "dashboard" ? "active" : ""}`}
-          onClick={() => setActiveTab("dashboard")}
-        >
-          Overview Dashboard
-        </button>
-        <button
-          type="button"
-          className={`view-tab ${activeTab === "explorer" ? "active" : ""}`}
-          onClick={() => setActiveTab("explorer")}
-        >
-          Cost Explorer & Drill-Down
-        </button>
-        <button type="button" className={`view-tab ${activeTab === "optimization" ? "active" : ""}`} onClick={() => setActiveTab("optimization")}>Cost Optimization</button>
-        <button type="button" className={`view-tab ${activeTab === "alerts" ? "active" : ""}`} onClick={() => setActiveTab("alerts")}>Cost Alerts</button>
-        <button type="button" className={`view-tab ${activeTab === "budgets" ? "active" : ""}`} onClick={() => setActiveTab("budgets")}>Budgets</button>
-        <button type="button" className={`view-tab ${activeTab === "copilot" ? "active" : ""}`} onClick={() => setActiveTab("copilot")}>FinOps Copilot</button>
-      </div>
-
       {activeTab === "explorer" ? (
         <CostExplorer initialFilters={explorerFocus ? { provider: explorerFocus.provider, service: explorerFocus.service, region: explorerFocus.region || undefined, account_id: explorerFocus.account_id || undefined } : undefined} />
       ) : activeTab === "anomalies" ? (
@@ -240,6 +219,26 @@ export default function Dashboard() {
                 <span className="card-label">Previous period</span>
                 <strong className="metric-value compact">{formatMoney(summary.overview.previous_period_cost, summary.overview.currency)}</strong>
                 <span className="metric-note">Baseline for comparison</span>
+              </article>
+              <article className="metric-card metric-card-muted">
+                <span className="card-label">Forecasted spend</span>
+                <strong className="metric-value compact">—</strong>
+                <span className="metric-note">Open Forecasts when a projection is available</span>
+              </article>
+              <article className="metric-card metric-card-muted">
+                <span className="card-label">Potential savings</span>
+                <strong className="metric-value compact">—</strong>
+                <span className="metric-note">Review Optimization recommendations</span>
+              </article>
+              <article className="metric-card metric-card-muted">
+                <span className="card-label">Active anomalies</span>
+                <strong className="metric-value compact">—</strong>
+                <span className="metric-note">Investigate the Anomalies workspace</span>
+              </article>
+              <article className="metric-card metric-card-muted">
+                <span className="card-label">Budget health</span>
+                <strong className="metric-value compact">—</strong>
+                <span className="metric-note">Open Budgets for live evaluations</span>
               </article>
               <article className="panel provider-panel">
                 <div className="panel-heading">
