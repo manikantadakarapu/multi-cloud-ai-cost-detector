@@ -107,3 +107,9 @@ docker-data/
 *.tmp
 *.bak
 *.orig
+
+# Terraform local state and provider cache
+infra/terraform/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
