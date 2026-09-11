@@ -1,0 +1,15 @@
+aws_region  = "us-east-1"
+project_name = "cost-detector"
+environment  = "demo"
+
+# Build and push immutable images before the full apply.
+backend_image  = "123456789012.dkr.ecr.us-east-1.amazonaws.com/cost-detector-demo/backend:REPLACE_WITH_GIT_SHA"
+frontend_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/cost-detector-demo/frontend:REPLACE_WITH_GIT_SHA"
+
+# Set this to the final HTTPS origin after ACM/Route 53 is configured.
+# For initial ALB-DNS validation, leave it empty and use the output URL.
+app_origin = ""
+
+# The demo account currently has AWS billing integration only.
+enable_azure = false
+enable_gcp   = false
