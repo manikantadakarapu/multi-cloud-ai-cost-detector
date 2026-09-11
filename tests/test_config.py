@@ -31,7 +31,7 @@ def test_aws_settings_from_env(monkeypatch):
 
 def test_gcp_billing_settings_defaults() -> None:
     """GCP billing settings have correct defaults and validation."""
-    settings = Settings(JWT_SECRET_KEY="test-secret")
+    settings = Settings(_env_file=None, JWT_SECRET_KEY="test-secret")
     assert settings.gcp_billing_enabled is True
     assert settings.google_application_credentials is None
     assert settings.gcp_billing_account is None
